@@ -56,7 +56,20 @@
     "paid": "Płatny",
     "details": "Szczegóły",
     "noPhoto": "Brak zdjęcia",
-    "surface": "Nawierzchnia: {value}"
+    "surface": "Nawierzchnia: {value}",
+    "nearMeTitle": "W pobliżu",
+    "nearMeHint": "Użyj lokalizacji, aby wyświetlić plaże posortowane według odległości (w promieniu ~50 km).",
+    "nearMeEnable": "Pokaż najbliższe plaże",
+    "nearMeActiveTitle": "Najbliższe plaże",
+    "nearMeLocating": "Pobieranie lokalizacji…",
+    "nearMeSorted": "Posortowano według odległości od Ciebie.",
+    "nearMeDenied": "Brak dostępu do lokalizacji. Włącz ją w ustawieniach przeglądarki, aby zobaczyć plaże w pobliżu.",
+    "nearMeUnsupported": "Twoja przeglądarka nie obsługuje geolokalizacji.",
+    "nearMeError": "Nie udało się odczytać lokalizacji. Spróbuj ponownie.",
+    "nearMeDisable": "Wyłącz tryb w pobliżu",
+    "sortDisabledNearMe": "Sortowanie według odległości, gdy włączony jest tryb w pobliżu.",
+    "distanceAway": "{distance} stąd",
+    "emptyNearMe": "Brak plaż w pobliżu z wybranymi filtrami."
   },
   "footer": {
     "tagline": "Tylko dobry klimat",

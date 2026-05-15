@@ -56,7 +56,20 @@
     "paid": "Paid",
     "details": "Details",
     "noPhoto": "No photo",
-    "surface": "Surface: {value}"
+    "surface": "Surface: {value}",
+    "nearMeTitle": "Near you",
+    "nearMeHint": "Use your location to list beaches sorted by distance (within ~50 km).",
+    "nearMeEnable": "Show nearest beaches",
+    "nearMeActiveTitle": "Nearest beaches",
+    "nearMeLocating": "Getting your location…",
+    "nearMeSorted": "Sorted by distance from you.",
+    "nearMeDenied": "Location access was denied. Enable it in your browser settings to see nearby beaches.",
+    "nearMeUnsupported": "Your browser does not support geolocation.",
+    "nearMeError": "Could not read your location. Please try again.",
+    "nearMeDisable": "Exit nearby mode",
+    "sortDisabledNearMe": "Sorting by distance while nearby mode is on.",
+    "distanceAway": "{distance} away",
+    "emptyNearMe": "No beaches found near you with these filters."
   },
   "footer": {
     "tagline": "Good vibes only",

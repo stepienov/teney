@@ -1,14 +1,16 @@
 import Image from "next/image";
-import { MapPin, Umbrella } from "lucide-react";
+import { MapPin, Navigation, Umbrella } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { formatDistanceKm } from "@/lib/geo/distance";
 import type { PoiDto } from "@/lib/types/poi";
 
 type BeachCardProps = {
   beach: PoiDto;
+  distanceKm?: number;
 };
 
-export function BeachCard({ beach }: BeachCardProps) {
+export function BeachCard({ beach, distanceKm }: BeachCardProps) {
   const t = useTranslations("beaches");
 
   return (
@@ -28,6 +30,12 @@ export function BeachCard({ beach }: BeachCardProps) {
             <Umbrella className="size-10 stroke-[1.25]" aria-hidden />
             <span className="text-sm font-medium">{t("noPhoto")}</span>
           </div>
+        )}
+        {distanceKm != null && (
+          <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-ocean-deep/85 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+            <Navigation className="size-3" aria-hidden />
+            {t("distanceAway", { distance: formatDistanceKm(distanceKm) })}
+          </span>
         )}
       </div>
 

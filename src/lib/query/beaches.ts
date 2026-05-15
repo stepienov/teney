@@ -1,19 +1,18 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import {
-  buildBeachSearchRequest,
-  searchPois,
-} from "@/lib/api/poi-search";
+import { searchBeaches } from "@/lib/api/beach-search";
 import {
   fetchMunicipalities,
   resolveBeachPointTypeId,
 } from "@/lib/api/reference";
+import type { UserCoords } from "@/hooks/use-geolocation";
 
 export type BeachSearchParams = {
   locale: string;
   page: number;
   sort: string;
   sortDirection: "ASC" | "DESC";
+  nearMe?: boolean;
   name?: string;
   regionId?: number;
   municipalityId?: number;
@@ -41,17 +40,32 @@ export function beachFiltersQueryOptions() {
 export function beachSearchQueryOptions(
   params: BeachSearchParams,
   beachPointTypeId: number | undefined,
+  userCoords: UserCoords | undefined,
 ) {
   return queryOptions({
-    queryKey: ["beaches", params, beachPointTypeId] as const,
+    queryKey: ["beaches", params, beachPointTypeId, userCoords] as const,
     queryFn: async () => {
       if (beachPointTypeId == null) {
         throw new Error("Beach point type not loaded");
       }
-      return searchPois(
-        buildBeachSearchRequest({ ...params, beachPointTypeId }),
-      );
+      return searchBeaches({
+        locale: params.locale,
+        page: params.page,
+        sort: params.sort,
+        sortDirection: params.sortDirection,
+        beachPointTypeId,
+        nearMe: params.nearMe,
+        userCoords: params.nearMe ? userCoords : undefined,
+        name: params.name,
+        regionId: params.regionId,
+        municipalityId: params.municipalityId,
+        hasLifeguard: params.hasLifeguard,
+        hasShower: params.hasShower,
+        isSandy: params.isSandy,
+      });
     },
-    enabled: beachPointTypeId != null,
+    enabled:
+      beachPointTypeId != null &&
+      (!params.nearMe || userCoords != null),
   });
 }

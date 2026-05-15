@@ -20,6 +20,7 @@ export type BeachFilterState = {
 type BeachFiltersProps = {
   municipalities: MunicipalityRef[];
   value: BeachFilterState;
+  nearMe?: boolean;
   onChange: (next: BeachFilterState) => void;
   onApply: () => void;
   onReset: () => void;
@@ -31,6 +32,7 @@ const inputClass =
 export function BeachFilters({
   municipalities,
   value,
+  nearMe = false,
   onChange,
   onApply,
   onReset,
@@ -48,6 +50,7 @@ export function BeachFilters({
       className="rounded-3xl border border-border bg-white/90 p-5 shadow-sm"
       onSubmit={(e) => {
         e.preventDefault();
+        // Parent runs POST /api/pois/search with current filter state.
         onApply();
       }}
     >
@@ -109,39 +112,49 @@ export function BeachFilters({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
-            {t("sortBy")}
-          </span>
-          <select
-            className={inputClass}
-            value={value.sort}
-            onChange={(e) => onChange({ ...value, sort: e.target.value })}
-          >
-            <option value="name">{t("sortName")}</option>
-            <option value="municipality.name">{t("sortMunicipality")}</option>
-            <option value="region.name">{t("sortRegion")}</option>
-          </select>
-        </label>
+        {nearMe ? (
+          <p className="flex items-end text-sm text-muted-foreground sm:col-span-2">
+            {t("sortDisabledNearMe")}
+          </p>
+        ) : (
+          <>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
+                {t("sortBy")}
+              </span>
+              <select
+                className={inputClass}
+                value={value.sort}
+                onChange={(e) => onChange({ ...value, sort: e.target.value })}
+              >
+                <option value="name">{t("sortName")}</option>
+                <option value="municipality.name">
+                  {t("sortMunicipality")}
+                </option>
+                <option value="region.name">{t("sortRegion")}</option>
+              </select>
+            </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
-            &nbsp;
-          </span>
-          <select
-            className={inputClass}
-            value={value.sortDirection}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                sortDirection: e.target.value as "ASC" | "DESC",
-              })
-            }
-          >
-            <option value="ASC">{t("directionAsc")}</option>
-            <option value="DESC">{t("directionDesc")}</option>
-          </select>
-        </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
+                &nbsp;
+              </span>
+              <select
+                className={inputClass}
+                value={value.sortDirection}
+                onChange={(e) =>
+                  onChange({
+                    ...value,
+                    sortDirection: e.target.value as "ASC" | "DESC",
+                  })
+                }
+              >
+                <option value="ASC">{t("directionAsc")}</option>
+                <option value="DESC">{t("directionDesc")}</option>
+              </select>
+            </label>
+          </>
+        )}
 
         <fieldset className="flex flex-wrap gap-4 sm:col-span-2 lg:col-span-3">
           <label className="flex items-center gap-2 text-sm text-ocean-deep">

@@ -56,7 +56,20 @@
     "paid": "Kostenpflichtig",
     "details": "Details",
     "noPhoto": "Kein Foto",
-    "surface": "Oberfläche: {value}"
+    "surface": "Oberfläche: {value}",
+    "nearMeTitle": "In deiner Nähe",
+    "nearMeHint": "Nutze deinen Standort, um Strände nach Entfernung zu sortieren (ca. 50 km Umkreis).",
+    "nearMeEnable": "Nächste Strände anzeigen",
+    "nearMeActiveTitle": "Nächste Strände",
+    "nearMeLocating": "Standort wird ermittelt…",
+    "nearMeSorted": "Nach Entfernung von dir sortiert.",
+    "nearMeDenied": "Standortzugriff verweigert. Aktiviere ihn in den Browser-Einstellungen.",
+    "nearMeUnsupported": "Dein Browser unterstützt keine Geolokalisierung.",
+    "nearMeError": "Standort konnte nicht gelesen werden. Bitte erneut versuchen.",
+    "nearMeDisable": "Nähe-Modus beenden",
+    "sortDisabledNearMe": "Sortierung nach Entfernung im Nähe-Modus.",
+    "distanceAway": "{distance} entfernt",
+    "emptyNearMe": "Keine Strände in deiner Nähe mit diesen Filtern."
   },
   "footer": {
     "tagline": "Nur gute Stimmung",

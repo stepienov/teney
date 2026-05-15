@@ -56,7 +56,20 @@
     "paid": "De pago",
     "details": "Detalles",
     "noPhoto": "Sin foto",
-    "surface": "Superficie: {value}"
+    "surface": "Superficie: {value}",
+    "nearMeTitle": "Cerca de ti",
+    "nearMeHint": "Usa tu ubicación para listar playas ordenadas por distancia (en ~50 km).",
+    "nearMeEnable": "Ver playas más cercanas",
+    "nearMeActiveTitle": "Playas más cercanas",
+    "nearMeLocating": "Obteniendo tu ubicación…",
+    "nearMeSorted": "Ordenadas por distancia desde ti.",
+    "nearMeDenied": "Se denegó el acceso a la ubicación. Actívalo en la configuración del navegador.",
+    "nearMeUnsupported": "Tu navegador no admite geolocalización.",
+    "nearMeError": "No se pudo leer tu ubicación. Inténtalo de nuevo.",
+    "nearMeDisable": "Salir del modo cercano",
+    "sortDisabledNearMe": "Orden por distancia mientras el modo cercano está activo.",
+    "distanceAway": "a {distance}",
+    "emptyNearMe": "No hay playas cerca con estos filtros."
   },
   "footer": {
     "tagline": "Solo buen rollo",
