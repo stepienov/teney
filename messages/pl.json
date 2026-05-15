@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "title": "Teney — przewodnik po Teneryfie",
+    "description": "Kompletna baza wiedzy o Teneryfie — plaże, miejsca i praktyczne informacje."
+  },
+  "nav": {
+    "home": "Start",
+    "beaches": "Plaże",
+    "about": "O nas",
+    "menu": "Menu",
+    "openMenu": "Otwórz menu"
+  },
+  "home": {
+    "badge": "Chill & relax — wyspa bez pośpiechu",
+    "title": "Teney",
+    "tagline": "To miejsce stanie się kompletną bazą wiedzy na temat Teneryfy — plaż, przyrody i wszystkiego, czego potrzebujesz, by pewnie odkrywać wyspę.",
+    "ctaBeaches": "Przeglądaj plaże",
+    "ctaAbout": "O nas"
+  },
+  "about": {
+    "badge": "O nas",
+    "title": "Twój wirtualny przewodnik po wyspie",
+    "intro": "Jesteśmy nowoczesną firmą, która przygotowuje produkt mający być wirtualnym przewodnikiem po Teneryfie.",
+    "p1": "Teney łączy sprawdzone dane o miejscach, praktyczne szczegóły i spokojny interfejs — żeby planowanie dnia nad oceanem czy w górach było proste, a nie przytłaczające.",
+    "p2": "Rozbudowujemy platformę krok po kroku: zaczynamy od plaż, a potem dodamy kolejne miejsca i lokalną wiedzę, której naprawdę potrzebują turyści i mieszkańcy.",
+    "p3": "Nasz cel to jedno wiarygodne źródło o wyspie — przejrzyste, wielojęzyczne i zawsze pod ręką na telefonie lub laptopie."
+  },
+  "beaches": {
+    "title": "Plaże",
+    "subtitle": "Prawdziwe dane z API — filtruj, sortuj i odkrywaj.",
+    "searchName": "Szukaj po nazwie",
+    "searchPlaceholder": "np. Playa de las Teresitas",
+    "region": "Region",
+    "municipality": "Gmina",
+    "allRegions": "Wszystkie regiony",
+    "allMunicipalities": "Wszystkie gminy",
+    "sortBy": "Sortuj według",
+    "sortName": "Nazwa",
+    "sortMunicipality": "Gmina",
+    "sortRegion": "Region",
+    "directionAsc": "Rosnąco",
+    "directionDesc": "Malejąco",
+    "filterLifeguard": "Ratownik",
+    "filterShower": "Prysznic",
+    "filterSandy": "Piaszczysta",
+    "applyFilters": "Zastosuj",
+    "resetFilters": "Wyczyść",
+    "empty": "Brak plaż pasujących do filtrów.",
+    "error": "Nie udało się załadować plaż. Spróbuj ponownie.",
+    "loading": "Ładowanie plaż…",
+    "page": "Strona {current} z {total}",
+    "prev": "Poprzednia",
+    "next": "Następna",
+    "total": "{count} plaż",
+    "free": "Wstęp bezpłatny",
+    "paid": "Płatny",
+    "details": "Szczegóły",
+    "noPhoto": "Brak zdjęcia",
+    "surface": "Nawierzchnia: {value}"
+  },
+  "footer": {
+    "tagline": "Tylko dobry klimat",
+    "rights": "Wszystko o Teneryfie"
+  },
+  "locale": {
+    "label": "Język",
+    "switch": "Zmień język"
+  }
+}

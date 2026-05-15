@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "title": "Teney — Tenerife guide",
+    "description": "The complete knowledge base about Tenerife — beaches, places, and practical tips."
+  },
+  "nav": {
+    "home": "Home",
+    "beaches": "Beaches",
+    "about": "About us",
+    "menu": "Menu",
+    "openMenu": "Open menu"
+  },
+  "home": {
+    "badge": "Chill & relax — island without rush",
+    "title": "Teney",
+    "tagline": "This will become the complete knowledge base about Tenerife — beaches, nature, and everything you need to explore the island with confidence.",
+    "ctaBeaches": "Browse beaches",
+    "ctaAbout": "About us"
+  },
+  "about": {
+    "badge": "About us",
+    "title": "Your virtual guide to the island",
+    "intro": "We are a modern company building a product designed to be your virtual guide across Tenerife.",
+    "p1": "Teney brings together reliable place data, practical details, and a calm interface — so planning a day by the ocean or in the mountains feels simple, not overwhelming.",
+    "p2": "We are growing the platform step by step: starting with beaches, then expanding into more places and local knowledge that visitors and residents actually need.",
+    "p3": "Our goal is one trustworthy source about the island — clear, multilingual, and always within reach on your phone or laptop."
+  },
+  "beaches": {
+    "title": "Beaches",
+    "subtitle": "Browse real data from our API — filter, sort, and explore.",
+    "searchName": "Search by name",
+    "searchPlaceholder": "e.g. Playa de las Teresitas",
+    "region": "Region",
+    "municipality": "Municipality",
+    "allRegions": "All regions",
+    "allMunicipalities": "All municipalities",
+    "sortBy": "Sort by",
+    "sortName": "Name",
+    "sortMunicipality": "Municipality",
+    "sortRegion": "Region",
+    "directionAsc": "Ascending",
+    "directionDesc": "Descending",
+    "filterLifeguard": "Lifeguard",
+    "filterShower": "Shower",
+    "filterSandy": "Sandy beach",
+    "applyFilters": "Apply",
+    "resetFilters": "Reset",
+    "empty": "No beaches match your filters.",
+    "error": "Could not load beaches. Please try again.",
+    "loading": "Loading beaches…",
+    "page": "Page {current} of {total}",
+    "prev": "Previous",
+    "next": "Next",
+    "total": "{count} beaches",
+    "free": "Free entry",
+    "paid": "Paid",
+    "details": "Details",
+    "noPhoto": "No photo",
+    "surface": "Surface: {value}"
+  },
+  "footer": {
+    "tagline": "Good vibes only",
+    "rights": "All about Tenerife"
+  },
+  "locale": {
+    "label": "Language",
+    "switch": "Change language"
+  }
+}

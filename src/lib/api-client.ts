@@ -46,3 +46,11 @@ export async function apiJson<T>(
     throw new ApiError("Response is not valid JSON", res.status, text);
   }
 }
+
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  return apiJson<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}

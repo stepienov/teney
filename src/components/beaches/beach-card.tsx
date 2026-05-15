@@ -1,0 +1,76 @@
+import Image from "next/image";
+import { MapPin, Umbrella } from "lucide-react";
+import { useTranslations } from "next-intl";
+
+import type { PoiDto } from "@/lib/types/poi";
+
+type BeachCardProps = {
+  beach: PoiDto;
+};
+
+export function BeachCard({ beach }: BeachCardProps) {
+  const t = useTranslations("beaches");
+
+  return (
+    <article className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_12px_40px_-20px_rgba(26,46,53,0.15)] transition-shadow hover:shadow-[0_20px_50px_-18px_rgba(64,179,194,0.3)]">
+      <div className="relative aspect-[16/10] bg-ocean-cyan/30">
+        {beach.photoUrl ? (
+          <Image
+            src={beach.photoUrl}
+            alt={beach.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-ocean-deep/50">
+            <Umbrella className="size-10 stroke-[1.25]" aria-hidden />
+            <span className="text-sm font-medium">{t("noPhoto")}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3 p-5">
+        <div>
+          <h3 className="font-heading text-lg font-bold text-ocean-deep">
+            {beach.name}
+          </h3>
+          {(beach.municipality || beach.region) && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="size-3.5 shrink-0" aria-hidden />
+              {[beach.municipality, beach.region].filter(Boolean).join(" · ")}
+            </p>
+          )}
+        </div>
+
+        {beach.description && (
+          <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+            {beach.description}
+          </p>
+        )}
+
+        <ul className="flex flex-wrap gap-2 text-xs font-medium">
+          <li className="rounded-full bg-ocean-cyan/40 px-2.5 py-1 text-ocean-deep">
+            {beach.isFree ? t("free") : t("paid")}
+          </li>
+          {beach.beachDetails?.beachSurface && (
+            <li className="rounded-full bg-secondary px-2.5 py-1 text-ocean-deep">
+              {t("surface", { value: beach.beachDetails.beachSurface })}
+            </li>
+          )}
+          {beach.beachDetails?.hasLifeguard && (
+            <li className="rounded-full bg-secondary px-2.5 py-1 text-ocean-deep">
+              {t("filterLifeguard")}
+            </li>
+          )}
+          {beach.beachDetails?.hasShower && (
+            <li className="rounded-full bg-secondary px-2.5 py-1 text-ocean-deep">
+              {t("filterShower")}
+            </li>
+          )}
+        </ul>
+      </div>
+    </article>
+  );
+}

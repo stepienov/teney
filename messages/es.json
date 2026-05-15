@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "title": "Teney — guía de Tenerife",
+    "description": "La base de conocimiento completa sobre Tenerife — playas, lugares y consejos prácticos."
+  },
+  "nav": {
+    "home": "Inicio",
+    "beaches": "Playas",
+    "about": "Sobre nosotros",
+    "menu": "Menú",
+    "openMenu": "Abrir menú"
+  },
+  "home": {
+    "badge": "Chill & relax — isla sin prisas",
+    "title": "Teney",
+    "tagline": "Este será el lugar que se convertirá en la base de conocimiento completa sobre Tenerife — playas, naturaleza y todo lo que necesitas para explorar la isla con confianza.",
+    "ctaBeaches": "Ver playas",
+    "ctaAbout": "Sobre nosotros"
+  },
+  "about": {
+    "badge": "Sobre nosotros",
+    "title": "Tu guía virtual de la isla",
+    "intro": "Somos una empresa moderna que prepara un producto pensado para ser tu guía virtual por Tenerife.",
+    "p1": "Teney reúne datos fiables de lugares, detalles prácticos y una interfaz tranquila — para que planificar un día junto al mar o en la montaña sea sencillo.",
+    "p2": "Ampliamos la plataforma paso a paso: empezamos por las playas y luego añadiremos más lugares y conocimiento local.",
+    "p3": "Nuestro objetivo es una fuente fiable sobre la isla — clara, multilingüe y siempre a mano en el móvil o el ordenador."
+  },
+  "beaches": {
+    "title": "Playas",
+    "subtitle": "Datos reales de la API — filtra, ordena y explora.",
+    "searchName": "Buscar por nombre",
+    "searchPlaceholder": "p. ej. Playa de las Teresitas",
+    "region": "Región",
+    "municipality": "Municipio",
+    "allRegions": "Todas las regiones",
+    "allMunicipalities": "Todos los municipios",
+    "sortBy": "Ordenar por",
+    "sortName": "Nombre",
+    "sortMunicipality": "Municipio",
+    "sortRegion": "Región",
+    "directionAsc": "Ascendente",
+    "directionDesc": "Descendente",
+    "filterLifeguard": "Socorrista",
+    "filterShower": "Ducha",
+    "filterSandy": "Arena",
+    "applyFilters": "Aplicar",
+    "resetFilters": "Restablecer",
+    "empty": "Ninguna playa coincide con los filtros.",
+    "error": "No se pudieron cargar las playas.",
+    "loading": "Cargando playas…",
+    "page": "Página {current} de {total}",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "total": "{count} playas",
+    "free": "Entrada gratuita",
+    "paid": "De pago",
+    "details": "Detalles",
+    "noPhoto": "Sin foto",
+    "surface": "Superficie: {value}"
+  },
+  "footer": {
+    "tagline": "Solo buen rollo",
+    "rights": "Todo sobre Tenerife"
+  },
+  "locale": {
+    "label": "Idioma",
+    "switch": "Cambiar idioma"
+  }
+}

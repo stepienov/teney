@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils";
 
 type TeneyLogoProps = {
   className?: string;
-  /** Line color; defaults to currentColor */
 };
 
 /**
