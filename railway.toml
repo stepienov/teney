@@ -1,0 +1,11 @@
+# Railway deploys this repo as a Node/Next.js app (Nixpacks).
+# Set NEXT_PUBLIC_API_BASE_URL in the Railway service variables before the first build.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
