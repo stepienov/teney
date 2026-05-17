@@ -155,28 +155,41 @@ export async function fetchBeachById(options: {
   locale: string;
   beachPointTypeId: number;
 }): Promise<PoiDto | null> {
-  let page = 0;
-  let totalPages = 1;
+  async function fetchMatchingBeach(includeBeachWeather: boolean) {
+    let page = 0;
+    let totalPages = 1;
 
-  while (page < totalPages) {
-    const response = await searchPois(
-      buildBeachSearchRequest({
-        locale: options.locale,
-        page,
-        size: 100,
-        sort: "id",
-        sortDirection: "ASC",
-        beachPointTypeId: options.beachPointTypeId,
-        includeBeachWeather: true,
-      }),
-    );
-    const match = response.content.find((beach) => beach.id === options.id);
-    if (match) {
-      return match;
+    while (page < totalPages) {
+      const response = await searchPois(
+        buildBeachSearchRequest({
+          locale: options.locale,
+          page,
+          size: 100,
+          sort: "id",
+          sortDirection: "ASC",
+          beachPointTypeId: options.beachPointTypeId,
+          includeBeachWeather,
+        }),
+      );
+      const match = response.content.find((beach) => beach.id === options.id);
+      if (match) {
+        return match;
+      }
+      totalPages = response.totalPages;
+      page += 1;
     }
-    totalPages = response.totalPages;
-    page += 1;
+
+    return null;
   }
 
-  return null;
+  try {
+    return await fetchMatchingBeach(true);
+  } catch (error) {
+    console.error(
+      "Failed to load extended beach weather; falling back to basic beach details.",
+      error,
+    );
+  }
+
+  return fetchMatchingBeach(false);
 }
