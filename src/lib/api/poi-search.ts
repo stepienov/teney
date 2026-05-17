@@ -7,7 +7,7 @@ import type {
 } from "@/lib/types/poi";
 
 export const BEACH_PAGE_SIZE = 10;
-export const DEFAULT_NEAR_ME_RADIUS_KM = 50;
+export const DEFAULT_NEAR_ME_RADIUS_KM = 0;
 /** Max page size allowed by POST /api/pois/search (used only in near-me temp flow). */
 export const NEAR_ME_FETCH_SIZE = 100;
 
@@ -29,6 +29,10 @@ export type BeachAttributeIndexItem = {
   attributes: BeachAttributes | null;
 };
 
+type BeachNameSuggestionItem = {
+  name: string | null;
+};
+
 export async function fetchBeachAttributeIndex(): Promise<
   BeachAttributeIndexItem[]
 > {
@@ -40,12 +44,25 @@ export async function fetchBeachAttributeIndex(): Promise<
   }));
 }
 
+export async function fetchBeachNameSuggestions(): Promise<string[]> {
+  const beaches = await apiJson<BeachNameSuggestionItem[]>("/api/beaches");
+
+  return Array.from(
+    new Set(
+      beaches
+        .map((beach) => beach.name?.trim())
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+}
+
 export type BeachSearchBuildOptions = {
   locale: string;
   page: number;
   sort: string;
   sortDirection: "ASC" | "DESC";
-  beachPointTypeId: number;
+  beachPointTypeId?: number;
+  id?: number;
   name?: string;
   regionId?: number;
   municipalityId?: number;
@@ -72,10 +89,14 @@ export type BeachSearchBuildOptions = {
 export function buildBeachSearchRequest(
   options: BeachSearchBuildOptions,
 ): PoiSearchRequest {
-  const filters: Record<string, string | number | boolean> = {
-    "pointType.id": options.beachPointTypeId,
-  };
+  const filters: Record<string, string | number | boolean> = {};
 
+  if (options.id != null) {
+    filters.id = options.id;
+  }
+  if (options.beachPointTypeId != null) {
+    filters["pointType.id"] = options.beachPointTypeId;
+  }
   if (options.name?.trim()) {
     filters.name = options.name.trim();
   }

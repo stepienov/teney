@@ -20,6 +20,7 @@ import type { PoiDto } from "@/lib/types/poi";
 export type BeachNearMeSearchOptions = {
   locale: string;
   page: number;
+  sortDirection: "ASC" | "DESC";
   radiusKm?: number;
   beachPointTypeId: number;
   userCoords: { lat: number; lon: number };
@@ -35,11 +36,11 @@ export type BeachNearMeSearchOptions = {
 export async function searchBeachesNearMeTemp(
   options: BeachNearMeSearchOptions,
 ): Promise<BeachPageWithDistances> {
-  const bbox = bboxAround(
-    options.userCoords.lat,
-    options.userCoords.lon,
-    options.radiusKm ?? DEFAULT_NEAR_ME_RADIUS_KM,
-  );
+  const radiusKm = options.radiusKm ?? DEFAULT_NEAR_ME_RADIUS_KM;
+  const bbox =
+    radiusKm > 0
+      ? bboxAround(options.userCoords.lat, options.userCoords.lon, radiusKm)
+      : undefined;
 
   const response = await searchPois(
     buildBeachSearchRequest({
@@ -69,8 +70,10 @@ export async function searchBeachesNearMeTemp(
       (row) =>
         options.allowedBeachIds == null || options.allowedBeachIds.has(row.poi.id),
     )
-    .filter((row) => row.km <= (options.radiusKm ?? DEFAULT_NEAR_ME_RADIUS_KM))
-    .sort((a, b) => a.km - b.km);
+    .filter((row) => radiusKm <= 0 || row.km <= radiusKm)
+    .sort((a, b) =>
+      options.sortDirection === "DESC" ? b.km - a.km : a.km - b.km,
+    );
 
   const totalElements = ranked.length;
   const totalPages = Math.max(1, Math.ceil(totalElements / BEACH_PAGE_SIZE));

@@ -33,11 +33,12 @@ export type Address = {
 
 export type Weather = {
   temperature: number | null;
-  conditions: string | null;
+  conditions?: string | null;
   windSpeed: number | null;
   windDirection: number | null;
   cloudCover: number | null;
-  precipitation: number | null;
+  precipitation?: number | null;
+  uvIndex?: number | null;
 };
 
 export type WeatherDataPoint = {
@@ -46,8 +47,10 @@ export type WeatherDataPoint = {
 };
 
 export type BeachWeather = {
+  todayDaily?: JsonValue | null;
   historicalSameDay: WeatherDataPoint[] | null;
-  todayHourlyUntil20: JsonValue | null;
+  hourlyNext3?: JsonValue | null;
+  todayHourlyUntil20?: JsonValue | null;
   forecastNext3Days: JsonValue | null;
 };
 

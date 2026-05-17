@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { searchBeaches } from "@/lib/api/beach-search";
+import { fetchBeachNameSuggestions } from "@/lib/api/poi-search";
 import {
   fetchMunicipalities,
   resolveBeachPointTypeId,
@@ -33,11 +34,12 @@ export function beachFiltersQueryOptions() {
   return queryOptions({
     queryKey: beachFiltersQueryKey,
     queryFn: async () => {
-      const [municipalities, beachPointTypeId] = await Promise.all([
+      const [municipalities, beachPointTypeId, beachNames] = await Promise.all([
         fetchMunicipalities(),
         resolveBeachPointTypeId(),
+        fetchBeachNameSuggestions(),
       ]);
-      return { municipalities, beachPointTypeId };
+      return { municipalities, beachPointTypeId, beachNames };
     },
     staleTime: 5 * 60_000,
   });

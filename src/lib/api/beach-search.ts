@@ -1,4 +1,5 @@
 import { searchBeachesNearMeTemp } from "@/lib/api/beach-search-near-me-temp";
+import { apiJson } from "@/lib/api-client";
 import {
   BEACH_PAGE_SIZE,
   buildBeachSearchRequest,
@@ -9,6 +10,11 @@ import {
 } from "@/lib/api/poi-search";
 import type { PoiDto, SpringPage } from "@/lib/types/poi";
 import type { UserCoords } from "@/hooks/use-geolocation";
+
+type BeachViewDetail = Pick<
+  PoiDto,
+  "id" | "attributes" | "beachDetails" | "visitorLimit" | "openingHours" | "address"
+>;
 
 export type BeachSearchOptions = BeachSearchBuildOptions & {
   nearMe?: boolean;
@@ -116,14 +122,20 @@ export async function searchBeaches(
   options: BeachSearchOptions,
 ): Promise<SpringPage<PoiDto> | BeachPageWithDistances> {
   const { nearMe, userCoords, ...apiOptions } = options;
+  const beachPointTypeId = apiOptions.beachPointTypeId;
   const attributeIds = await matchingBeachIdsForAttributes(options);
+
+  if (beachPointTypeId == null) {
+    throw new Error("Beach point type is required for beach search");
+  }
 
   if (nearMe && userCoords != null) {
     return searchBeachesNearMeTemp({
       locale: apiOptions.locale,
       page: apiOptions.page,
+      sortDirection: apiOptions.sortDirection,
       radiusKm: options.radiusKm,
-      beachPointTypeId: apiOptions.beachPointTypeId,
+      beachPointTypeId,
       userCoords,
       allowedBeachIds: attributeIds ?? undefined,
       name: apiOptions.name,
@@ -153,37 +165,60 @@ export async function searchBeaches(
 export async function fetchBeachById(options: {
   id: number;
   locale: string;
-  beachPointTypeId: number;
+  weatherDate?: string;
 }): Promise<PoiDto | null> {
-  async function fetchMatchingBeach(includeBeachWeather: boolean) {
-    let page = 0;
-    let totalPages = 1;
+  async function fetchBeachViewDetail(): Promise<BeachViewDetail | null> {
+    const beaches = await apiJson<BeachViewDetail[]>(
+      `/api/beaches?ids=${options.id}`,
+    );
 
-    while (page < totalPages) {
-      const response = await searchPois(
-        buildBeachSearchRequest({
-          locale: options.locale,
-          page,
-          size: 100,
-          sort: "id",
-          sortDirection: "ASC",
-          beachPointTypeId: options.beachPointTypeId,
-          includeBeachWeather,
-        }),
-      );
-      const match = response.content.find((beach) => beach.id === options.id);
-      if (match) {
-        return match;
-      }
-      totalPages = response.totalPages;
-      page += 1;
+    return beaches[0] ?? null;
+  }
+
+  async function enrichBeach(beach: PoiDto | null): Promise<PoiDto | null> {
+    if (beach == null) {
+      return null;
     }
 
-    return null;
+    try {
+      const detail = await fetchBeachViewDetail();
+
+      if (detail == null) {
+        return beach;
+      }
+
+      return {
+        ...beach,
+        attributes: detail.attributes ?? beach.attributes,
+        beachDetails: detail.beachDetails ?? beach.beachDetails,
+        visitorLimit: detail.visitorLimit ?? beach.visitorLimit,
+        openingHours: detail.openingHours ?? beach.openingHours,
+        address: detail.address ?? beach.address,
+      };
+    } catch (error) {
+      console.error("Failed to enrich beach details with /api/beaches.", error);
+      return beach;
+    }
+  }
+
+  async function fetchMatchingBeach(includeBeachWeather: boolean) {
+    const response = await searchPois(
+      {
+        filters: {
+          id: options.id,
+        },
+        locale: options.locale,
+        size: 1,
+        includeBeachWeather,
+        weatherDate: options.weatherDate,
+      },
+    );
+
+    return response.content[0] ?? null;
   }
 
   try {
-    return await fetchMatchingBeach(true);
+    return enrichBeach(await fetchMatchingBeach(true));
   } catch (error) {
     console.error(
       "Failed to load extended beach weather; falling back to basic beach details.",
@@ -191,5 +226,5 @@ export async function fetchBeachById(options: {
     );
   }
 
-  return fetchMatchingBeach(false);
+  return enrichBeach(await fetchMatchingBeach(false));
 }

@@ -1,9 +1,11 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import {
   CalendarDays,
   CloudRain,
   CloudSun,
+  Cctv,
   Droplets,
   Gauge,
   MapPin,
@@ -15,7 +17,6 @@ import {
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { fetchBeachById } from "@/lib/api/beach-search";
-import { resolveBeachPointTypeId } from "@/lib/api/reference";
 import { Link } from "@/i18n/routing";
 import type { Address, JsonValue, PoiDto, Weather } from "@/lib/types/poi";
 
@@ -30,6 +31,7 @@ type WeatherMetric = {
   value: string | null;
   icon: typeof Wind;
   helper?: string | null;
+  hideLabelWhenHelper?: boolean;
   tone?: "sky" | "amber" | "emerald" | "rose";
 };
 
@@ -86,6 +88,29 @@ function stringField(record: WeatherRecord, keys: string[]): string | null {
   }
 
   return null;
+}
+
+function conditionLabel(value: string | null | undefined, t: (key: string) => string): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const key = value.trim().toLowerCase();
+  const labels: Record<string, string> = {
+    clear: t("conditionClear"),
+    cloudy: t("conditionCloudy"),
+    overcast: t("conditionOvercast"),
+    "partially cloudy": t("conditionPartiallyCloudy"),
+    rain: t("conditionRain"),
+    "heavy rain": t("conditionHeavyRain"),
+    drizzle: t("conditionDrizzle"),
+    fog: t("conditionFog"),
+    mist: t("conditionMist"),
+    snow: t("conditionSnow"),
+    thunderstorm: t("conditionThunderstorm"),
+  };
+
+  return labels[key] ?? value;
 }
 
 function formatNumber(locale: string, value: number): string {
@@ -178,6 +203,29 @@ function formatTemperatureRange(
     .join(" / ");
 }
 
+function temperatureFromRecord(record: WeatherRecord | null): number | null {
+  if (record == null) {
+    return null;
+  }
+
+  return numberField(record, ["temp", "temperature", "tempavg", "temperatureAvg"]);
+}
+
+function headlineTemperatureFromRecord(record: WeatherRecord | null): number | null {
+  if (record == null) {
+    return null;
+  }
+
+  return (
+    numberField(record, ["tempmax", "temperatureMax", "maxTemp"]) ??
+    temperatureFromRecord(record)
+  );
+}
+
+function temperatureFromWeatherJson(value: JsonValue | null | undefined): number | null {
+  return temperatureFromRecord(recordsFromJson(value ?? null)[0] ?? null);
+}
+
 function weatherMetrics(
   record: WeatherRecord,
   locale: string,
@@ -201,6 +249,7 @@ function weatherMetrics(
       value: formatMetric(locale, windSpeed, " km/h"),
       icon: Wind,
       helper: wind?.label,
+      hideLabelWhenHelper: true,
       tone: wind?.tone,
     },
     {
@@ -239,15 +288,19 @@ function windInfo(
     return null;
   }
 
-  if (speed < 15) {
+  if (speed < 10) {
     return { label: labels.windCalm, tone: "emerald", width: "25%" };
   }
 
-  if (speed < 30) {
+  if (speed <= 15) {
     return { label: labels.windModerate, tone: "sky", width: "50%" };
   }
 
-  if (speed < 45) {
+  if (speed <= 20) {
+    return { label: labels.windNoticeable, tone: "amber", width: "65%" };
+  }
+
+  if (speed <= 30) {
     return { label: labels.windStrong, tone: "amber", width: "75%" };
   }
 
@@ -276,6 +329,64 @@ function formatPrice(beach: PoiDto, locale: string): string | null {
   }).format(beach.ticketPrice);
 }
 
+function isTruthyAttribute(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return value.trim().toUpperCase() === "TRUE";
+  }
+
+  return false;
+}
+
+function surfaceLabel(
+  surface: string | null | undefined,
+  labels: {
+    lightSand: string;
+    volcanicSand: string;
+    stones: string;
+  },
+): string | null {
+  switch (surface) {
+    case "LIGHT_SAND":
+      return labels.lightSand;
+    case "VOLCANIC_SAND":
+      return labels.volcanicSand;
+    case "STONES":
+      return labels.stones;
+    default:
+      return surface ?? null;
+  }
+}
+
+function FeatureTag({
+  children,
+  href,
+}: {
+  children: ReactNode;
+  href?: string;
+}) {
+  const className =
+    "inline-flex items-center rounded-full bg-ocean-foam px-3 py-1.5 text-xs font-semibold text-ocean-deep ring-1 ring-ocean-cyan/40";
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={`${className} transition-colors hover:bg-ocean-cyan/40`}
+      >
+        {children}
+      </a>
+    );
+  }
+
+  return <span className={className}>{children}</span>;
+}
+
 function MetricPill({ metric }: { metric: WeatherMetric }) {
   const Icon = metric.icon;
   const toneClass = {
@@ -287,15 +398,25 @@ function MetricPill({ metric }: { metric: WeatherMetric }) {
   }[metric.tone ?? "sky"];
 
   return (
-    <div className={`rounded-2xl px-3 py-2 text-sm shadow-sm ring-1 ${toneClass}`}>
-      <div className="flex items-center gap-2">
-        <Icon className="size-4 shrink-0" aria-hidden />
-        <span className="text-current/70">{metric.label}</span>
-        <span className="ml-auto font-semibold">{metric.value}</span>
+    <div
+      className={`grid min-h-16 grid-cols-[auto_1fr_auto] items-center gap-x-2 rounded-2xl px-4 py-3 text-sm shadow-sm ring-1 ${toneClass}`}
+    >
+      <Icon className="size-5 shrink-0" aria-hidden />
+      <div className="min-w-0">
+        {!metric.hideLabelWhenHelper || !metric.helper ? (
+          <p className="text-sm font-medium leading-tight text-current/70">
+            {metric.label}
+          </p>
+        ) : null}
+        {metric.helper ? (
+          <p className="text-sm font-semibold leading-tight text-current/80">
+            {metric.helper}
+          </p>
+        ) : null}
       </div>
-      {metric.helper ? (
-        <p className="mt-1 text-xs font-medium text-current/75">{metric.helper}</p>
-      ) : null}
+      <span className="self-center whitespace-nowrap text-base font-bold leading-none">
+        {metric.value}
+      </span>
     </div>
   );
 }
@@ -308,89 +429,104 @@ function EmptyWeatherState({ label }: { label: string }) {
   );
 }
 
-function HourlyWeatherSection({
+function CurrentWeatherSection({
   title,
-  value,
   current,
   locale,
   labels,
 }: {
   title: string;
-  value: JsonValue | null;
   current: Weather | null;
   locale: string;
   labels: WeatherLabels;
 }) {
-  const records = recordsFromJson(value);
-
-  if (!records.length && current == null) {
+  if (current == null) {
     return null;
   }
 
-  const currentWind = windInfo(current?.windSpeed ?? null, labels);
+  const currentWind = windInfo(current.windSpeed, labels);
+  const currentConditions = conditionLabel(current.conditions, labels.t);
 
   return (
-    <section className="overflow-hidden rounded-4xl border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-5 shadow-[0_18px_50px_-30px_rgba(26,46,53,0.28)] sm:p-6">
+    <section className="rounded-4xl border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-5 shadow-[0_18px_50px_-30px_rgba(26,46,53,0.28)] sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-            {labels.currentAndHourly}
+            {labels.beachWeather}
           </p>
           <h2 className="mt-1 font-heading text-2xl font-bold text-ocean-deep">
             {title}
           </h2>
         </div>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-sky-900 shadow-sm ring-1 ring-sky-200">
+      </div>
+
+      <div className="mt-5 grid gap-4 rounded-3xl bg-white p-4 ring-1 ring-sky-200 lg:grid-cols-[0.8fr_1.2fr]">
+        <div>
+          <p className="text-sm font-semibold text-sky-700">{labels.currentWeather}</p>
+          <div className="mt-2 flex flex-wrap items-end gap-3">
+            <p className="text-6xl font-bold tracking-tight text-ocean-deep">
+              {current.temperature != null
+                ? formatMetric(locale, current.temperature, "°C")
+                : labels.unknown}
+            </p>
+            <p className="pb-1 text-sm font-medium text-ocean-deep">
+              {currentConditions ?? labels.currentDataOnly}
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <MetricPill
+            metric={{
+              label: labels.wind,
+              value: formatMetric(locale, current.windSpeed, " km/h"),
+              icon: Wind,
+              helper: currentWind?.label,
+                hideLabelWhenHelper: true,
+              tone: currentWind?.tone,
+            }}
+          />
+          <MetricPill
+            metric={{
+              label: labels.cloudCover,
+              value: formatPercent(locale, current.cloudCover),
+              icon: CloudSun,
+              tone: "sky",
+            }}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HourlyWeatherSection({
+  title,
+  value,
+  locale,
+  labels,
+}: {
+  title: string;
+  value: JsonValue | null;
+  locale: string;
+  labels: WeatherLabels;
+}) {
+  const records = recordsFromJson(value);
+
+  if (!records.length) {
+    return null;
+  }
+
+  return (
+    <section className="overflow-hidden rounded-4xl border border-sky-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-heading text-2xl font-bold text-ocean-deep">
+          {title}
+        </h2>
+        <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-900 shadow-sm ring-1 ring-sky-200">
           {labels.hourly}
         </span>
       </div>
-
-      {current ? (
-        <div className="mt-5 grid gap-4 rounded-3xl bg-white p-4 ring-1 ring-sky-200 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
-            <p className="text-sm font-semibold text-sky-700">{labels.currentWeather}</p>
-            <div className="mt-2 flex flex-wrap items-end gap-3">
-              <p className="text-5xl font-bold tracking-tight text-ocean-deep">
-                {current.temperature != null
-                  ? formatMetric(locale, current.temperature, "°C")
-                  : labels.unknown}
-              </p>
-              <p className="pb-1 text-sm font-medium text-ocean-deep">
-                {current.conditions ?? labels.noConditions}
-              </p>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MetricPill
-              metric={{
-                label: labels.wind,
-                value: formatMetric(locale, current.windSpeed, " km/h"),
-                icon: Wind,
-                helper: currentWind?.label,
-                tone: currentWind?.tone,
-              }}
-            />
-            <MetricPill
-              metric={{
-                label: labels.cloudCover,
-                value: formatPercent(locale, current.cloudCover),
-                icon: CloudSun,
-                tone: "sky",
-              }}
-            />
-            <MetricPill
-              metric={{
-                label: labels.precipitation,
-                value: formatMetric(locale, current.precipitation, " mm"),
-                icon: CloudRain,
-                tone: current.precipitation ? "amber" : "emerald",
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mt-5 flex gap-4 overflow-x-auto pb-2">
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
         {records.map((record, index) => {
           const time = formatTimeLabel(stringField(record, ["datetime", "time"]));
           const temp = formatMetric(
@@ -398,13 +534,16 @@ function HourlyWeatherSection({
             numberField(record, ["temp", "temperature"]),
             "°C",
           );
-          const conditions = stringField(record, ["conditions", "description"]);
+          const conditions = conditionLabel(
+            stringField(record, ["conditions", "description"]),
+            labels.t,
+          );
           const metrics = weatherMetrics(record, locale, labels).slice(0, 4);
 
           return (
             <article
               key={`${time ?? labels.now}-${index}`}
-              className="min-w-[15rem] rounded-3xl bg-white p-4 shadow-sm ring-1 ring-sky-200"
+              className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -420,7 +559,7 @@ function HourlyWeatherSection({
                 </div>
               </div>
               <p className="mt-2 min-h-5 text-sm font-medium text-ocean-deep">
-                {conditions ?? labels.noConditions}
+                {conditions ?? labels.currentDataOnly}
               </p>
               <div className="mt-4 grid gap-2">
                 {metrics.map((metric) => (
@@ -436,14 +575,16 @@ function HourlyWeatherSection({
 }
 
 type WeatherLabels = {
-  currentAndHourly: string;
+  t: (key: string) => string;
   currentWeather: string;
+  beachWeather: string;
   hourly: string;
   daily: string;
   historical: string;
   now: string;
   unknown: string;
   noConditions: string;
+  currentDataOnly: string;
   feelsLike: string;
   wind: string;
   humidity: string;
@@ -455,12 +596,18 @@ type WeatherLabels = {
   noReadableWeather: string;
   windCalm: string;
   windModerate: string;
+  windNoticeable: string;
   windStrong: string;
   windVeryStrong: string;
   averageTemperature: string;
+  averageTemperatureShort: string;
+  todayTemperature: string;
   warmerThanAverage: string;
   colderThanAverage: string;
   similarToAverage: string;
+  warmerThanToday: string;
+  colderThanToday: string;
+  similarToToday: string;
 };
 
 function DailyForecastSection({
@@ -497,7 +644,10 @@ function DailyForecastSection({
             stringField(record, ["datetime", "date"]),
             locale,
           );
-          const conditions = stringField(record, ["conditions", "description"]);
+          const conditions = conditionLabel(
+            stringField(record, ["conditions", "description"]),
+            labels.t,
+          );
           const range = formatTemperatureRange(record, locale);
           const metrics = weatherMetrics(record, locale, labels).filter(
             (metric) =>
@@ -545,11 +695,13 @@ function DailyForecastSection({
 function HistoricalWeatherSection({
   title,
   points,
+  currentTemperature,
   locale,
   labels,
 }: {
   title: string;
   points: { date: string; data: JsonValue }[];
+  currentTemperature: number | null;
   locale: string;
   labels: WeatherLabels;
 }) {
@@ -566,12 +718,22 @@ function HistoricalWeatherSection({
       item.record != null,
     );
   const historicalTemps = historicalRecords
-    .map((item) => numberField(item.record, ["temp", "temperature"]))
+    .map((item) => temperatureFromRecord(item.record))
     .filter((temp): temp is number => temp != null);
   const averageTemp =
     historicalTemps.length > 0
       ? historicalTemps.reduce((sum, temp) => sum + temp, 0) / historicalTemps.length
       : null;
+  const todayVsAverage =
+    currentTemperature != null && averageTemp != null
+      ? currentTemperature - averageTemp
+      : null;
+  const todayAverageLabel =
+    todayVsAverage == null || Math.abs(todayVsAverage) < 0.5
+      ? labels.similarToAverage
+      : todayVsAverage > 0
+        ? labels.warmerThanAverage
+        : labels.colderThanAverage;
 
   return (
     <section className="rounded-4xl border border-border bg-white/95 p-5 shadow-sm sm:p-6">
@@ -584,75 +746,109 @@ function HistoricalWeatherSection({
         </span>
       </div>
 
-      {averageTemp != null ? (
-        <div className="mt-5 rounded-3xl bg-emerald-50 p-4 text-emerald-950 ring-1 ring-emerald-200">
-          <p className="text-sm font-semibold">{labels.averageTemperature}</p>
-          <p className="mt-1 text-3xl font-bold">
-            {formatMetric(locale, averageTemp, "°C")}
+      <div className="mt-5 grid gap-4 lg:grid-cols-[18rem_1fr]">
+        <aside className="self-start rounded-3xl bg-emerald-50 p-4 text-emerald-950 ring-1 ring-emerald-200 lg:sticky lg:top-24">
+          <p className="text-sm font-semibold">{labels.todayTemperature}</p>
+          <p className="mt-1 text-4xl font-bold">
+            {formatMetric(locale, currentTemperature, "°C") ?? labels.unknown}
           </p>
-        </div>
-      ) : null}
+          {averageTemp != null ? (
+            <p className="mt-2 rounded-2xl bg-white/70 px-3 py-2 text-xs font-semibold">
+              {todayAverageLabel}
+              {todayVsAverage != null
+                ? ` (${todayVsAverage > 0 ? "+" : ""}${formatMetric(
+                    locale,
+                    todayVsAverage,
+                    "°C",
+                  )})`
+                : ""}
+            </p>
+          ) : null}
+          {averageTemp != null ? (
+            <div className="mt-4 border-t border-emerald-200 pt-4">
+              <p className="text-sm font-semibold">{labels.averageTemperature}</p>
+              <p className="mt-1 text-2xl font-bold">
+                {formatMetric(locale, averageTemp, "°C")}
+              </p>
+            </div>
+          ) : null}
+        </aside>
 
-      <div className="mt-5 grid gap-3">
-        {points.map((point) => {
-          const record = recordsFromJson(point.data)[0];
-          const date = formatDateWithYearLabel(point.date, locale) ?? point.date;
+        <div className="grid gap-3">
+          {points.map((point) => {
+            const record = recordsFromJson(point.data)[0];
+            const date = formatDateWithYearLabel(point.date, locale) ?? point.date;
 
-          if (!record) {
-            return (
-              <article key={point.date} className="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
-                <h3 className="font-semibold text-ocean-deep">{date}</h3>
-                <EmptyWeatherState label={labels.noReadableWeather} />
-              </article>
+            if (!record) {
+              return (
+                <article key={point.date} className="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
+                  <h3 className="font-semibold text-ocean-deep">{date}</h3>
+                  <EmptyWeatherState label={labels.noReadableWeather} />
+                </article>
+              );
+            }
+
+            const range = formatTemperatureRange(record, locale);
+            const conditions = conditionLabel(
+              stringField(record, ["conditions", "description"]),
+              labels.t,
             );
-          }
+            const metrics = weatherMetrics(record, locale, labels).slice(0, 4);
+            const temp = headlineTemperatureFromRecord(record);
+            const diff =
+              temp != null && currentTemperature != null
+                ? temp - currentTemperature
+                : null;
+            const comparison =
+              diff == null || Math.abs(diff) < 0.5
+                ? labels.similarToToday
+                : diff > 0
+                  ? labels.warmerThanToday
+                  : labels.colderThanToday;
 
-          const range = formatTemperatureRange(record, locale);
-          const conditions = stringField(record, ["conditions", "description"]);
-          const metrics = weatherMetrics(record, locale, labels).slice(0, 4);
-          const temp = numberField(record, ["temp", "temperature"]);
-          const diff = temp != null && averageTemp != null ? temp - averageTemp : null;
-          const comparison =
-            diff == null || Math.abs(diff) < 0.5
-              ? labels.similarToAverage
-              : diff > 0
-                ? labels.warmerThanAverage
-                : labels.colderThanAverage;
-
-          return (
-            <article
-              key={point.date}
-              className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:grid-cols-[0.8fr_1.2fr]"
-            >
-              <div>
-                <p className="flex items-center gap-1.5 text-sm font-semibold text-ocean-teal">
-                  <Gauge className="size-4" aria-hidden />
-                  {date}
-                </p>
-                <p className="mt-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                  {comparison}
-                  {diff != null ? ` (${diff > 0 ? "+" : ""}${formatMetric(locale, diff, "°C")})` : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+            return (
+              <article
+                key={point.date}
+                className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:grid-cols-[0.8fr_1.2fr]"
+              >
                 <div>
-                  <h3 className="text-3xl font-bold text-ocean-deep">
-                    {range ?? labels.unknown}
-                  </h3>
-                  <p className="mt-1 text-sm font-medium text-ocean-deep">
-                    {conditions ?? labels.noConditions}
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-ocean-teal">
+                    <Gauge className="size-4" aria-hidden />
+                    {date}
+                  </p>
+                  <p className="mt-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    {comparison}
+                    {diff != null
+                      ? ` (${diff > 0 ? "+" : ""}${formatMetric(locale, diff, "°C")})`
+                      : ""}
                   </p>
                 </div>
-                <CloudSun className="size-9 text-ocean-teal" aria-hidden />
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2 lg:col-span-2">
-                {metrics.map((metric) => (
-                  <MetricPill key={metric.label} metric={metric} />
-                ))}
-              </div>
-            </article>
-          );
-        })}
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-3xl font-bold text-ocean-deep">
+                      {range ?? labels.unknown}
+                    </h3>
+                    {temp != null ? (
+                      <p className="mt-1 text-sm font-semibold text-ocean-teal">
+                        {labels.averageTemperatureShort}:{" "}
+                        {formatMetric(locale, temp, "°C")}
+                      </p>
+                    ) : null}
+                    <p className="mt-1 text-sm font-medium text-ocean-deep">
+                      {conditions ?? labels.noConditions}
+                    </p>
+                  </div>
+                  <CloudSun className="size-9 text-ocean-teal" aria-hidden />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:col-span-2">
+                  {metrics.map((metric) => (
+                    <MetricPill key={metric.label} metric={metric} />
+                  ))}
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -668,24 +864,54 @@ export default async function BeachDetailsPage({ params }: Props) {
   }
 
   const t = await getTranslations({ locale, namespace: "beaches" });
-  const beachPointTypeId = await resolveBeachPointTypeId();
-  const beach = await fetchBeachById({ id: beachId, locale, beachPointTypeId });
+  const beach = await fetchBeachById({ id: beachId, locale });
 
   if (beach == null) {
     notFound();
   }
 
   const address = formatAddress(beach.address);
-  const price = formatPrice(beach, locale);
+  const price = beach.isFree ? null : formatPrice(beach, locale);
+  const surface = surfaceLabel(beach.beachDetails?.beachSurface, {
+    lightSand: t("surfaceLightSand"),
+    volcanicSand: t("surfaceVolcanicSand"),
+    stones: t("surfaceStones"),
+  });
+  const webcamLink =
+    typeof beach.attributes?.webcam_link === "string"
+      ? beach.attributes.webcam_link
+      : null;
+  const beachFeatureTags = [
+    surface ? { key: "surface", label: surface } : null,
+    beach.beachDetails?.hasLifeguard ? { key: "lifeguard", label: t("tagLifeguard") } : null,
+    beach.beachDetails?.hasShower ? { key: "shower", label: t("tagShower") } : null,
+    beach.beachDetails?.boatAccessOnly ? { key: "boat", label: t("tagBoatOnly") } : null,
+    isTruthyAttribute(beach.attributes?.sunbeds_boolean)
+      ? { key: "sunbeds", label: t("tagSunbeds") }
+      : null,
+    isTruthyAttribute(beach.attributes?.shop_nearby_boolean)
+      ? { key: "shop", label: t("tagShopNearby") }
+      : null,
+    isTruthyAttribute(beach.attributes?.restaurant_nearby_boolean)
+      ? { key: "restaurant", label: t("tagRestaurantNearby") }
+      : null,
+    isTruthyAttribute(beach.attributes?.dog_friendly_boolean)
+      ? { key: "dogs", label: t("tagDogFriendly") }
+      : null,
+  ].filter(
+    (tag): tag is { key: string; label: string; href?: string } => tag != null,
+  );
   const weatherLabels: WeatherLabels = {
-    currentAndHourly: t("currentAndHourly"),
+    t: (key) => t(key),
     currentWeather: t("currentWeather"),
+    beachWeather: t("beachForecast"),
     hourly: t("hourlyForecast"),
     daily: t("dailyForecast"),
     historical: t("historicalWeather"),
     now: t("now"),
     unknown: t("unknown"),
     noConditions: t("noConditions"),
+    currentDataOnly: t("currentDataOnly"),
     feelsLike: t("feelsLike"),
     wind: t("wind"),
     humidity: t("humidity"),
@@ -697,12 +923,18 @@ export default async function BeachDetailsPage({ params }: Props) {
     noReadableWeather: t("noReadableWeather"),
     windCalm: t("windCalm"),
     windModerate: t("windModerate"),
+    windNoticeable: t("windNoticeable"),
     windStrong: t("windStrong"),
     windVeryStrong: t("windVeryStrong"),
     averageTemperature: t("averageTemperature"),
+    averageTemperatureShort: t("averageTemperatureShort"),
+    todayTemperature: t("todayTemperature"),
     warmerThanAverage: t("warmerThanAverage"),
     colderThanAverage: t("colderThanAverage"),
     similarToAverage: t("similarToAverage"),
+    warmerThanToday: t("warmerThanToday"),
+    colderThanToday: t("colderThanToday"),
+    similarToToday: t("similarToToday"),
   };
 
   return (
@@ -747,31 +979,44 @@ export default async function BeachDetailsPage({ params }: Props) {
             )}
           </div>
 
-          {beach.description && (
-            <p className="max-w-3xl leading-relaxed text-muted-foreground">
-              {beach.description}
-            </p>
-          )}
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+            {beach.description && (
+              <p className="max-w-3xl leading-relaxed text-muted-foreground">
+                {beach.description}
+              </p>
+            )}
+            {webcamLink ? (
+              <a
+                href={webcamLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-fit items-center gap-2 rounded-full bg-ocean-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-ocean-teal"
+              >
+                <Cctv className="size-4" aria-hidden />
+                {t("webcamButton")}
+              </a>
+            ) : null}
+          </div>
+
+          {beachFeatureTags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {beachFeatureTags.map((tag) => (
+                <FeatureTag key={tag.key} href={tag.href}>
+                  {tag.label}
+                </FeatureTag>
+              ))}
+            </div>
+          ) : null}
 
           <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl bg-ocean-foam p-4">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
-                {t("entry")}
-              </dt>
-              <dd className="mt-1 font-medium text-ocean-deep">
-                {beach.isFree ? t("free") : price ?? t("paid")}
-              </dd>
-            </div>
-            {beach.beachDetails?.beachSurface && (
+            {price ? (
               <div className="rounded-2xl bg-ocean-foam p-4">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
-                  {t("filterSurface")}
+                  {t("entry")}
                 </dt>
-                <dd className="mt-1 font-medium text-ocean-deep">
-                  {t("surface", { value: beach.beachDetails.beachSurface })}
-                </dd>
+                <dd className="mt-1 font-medium text-ocean-deep">{price}</dd>
               </div>
-            )}
+            ) : null}
             {beach.openingHours && (
               <div className="rounded-2xl bg-ocean-foam p-4">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
@@ -790,40 +1035,6 @@ export default async function BeachDetailsPage({ params }: Props) {
                 <dd className="mt-1 font-medium text-ocean-deep">{address}</dd>
               </div>
             )}
-          </dl>
-        </div>
-      </header>
-
-      <div className="mt-8 grid gap-6">
-        <section className="rounded-3xl border border-border bg-white/90 p-5 shadow-sm">
-          <h2 className="font-heading text-xl font-bold text-ocean-deep">
-            {t("beachDetails")}
-          </h2>
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-ocean-foam p-4">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
-                {t("filterLifeguard")}
-              </dt>
-              <dd className="mt-1 font-medium text-ocean-deep">
-                {beach.beachDetails?.hasLifeguard ? t("yes") : t("unknown")}
-              </dd>
-            </div>
-            <div className="rounded-2xl bg-ocean-foam p-4">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
-                {t("filterShower")}
-              </dt>
-              <dd className="mt-1 font-medium text-ocean-deep">
-                {beach.beachDetails?.hasShower ? t("yes") : t("unknown")}
-              </dd>
-            </div>
-            <div className="rounded-2xl bg-ocean-foam p-4">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
-                {t("boatAccessOnly")}
-              </dt>
-              <dd className="mt-1 font-medium text-ocean-deep">
-                {beach.beachDetails?.boatAccessOnly ? t("yes") : t("no")}
-              </dd>
-            </div>
             {beach.visitorLimit != null && (
               <div className="rounded-2xl bg-ocean-foam p-4">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
@@ -835,14 +1046,23 @@ export default async function BeachDetailsPage({ params }: Props) {
               </div>
             )}
           </dl>
-        </section>
-      </div>
+        </div>
+      </header>
 
       <div className="mt-6 grid gap-6">
-        <HourlyWeatherSection
-          title={t("todayHourlyUntil20")}
-          value={beach.beachWeather?.todayHourlyUntil20 ?? null}
+        <CurrentWeatherSection
+          title={t("currentWeather")}
           current={beach.weather}
+          locale={locale}
+          labels={weatherLabels}
+        />
+        <HourlyWeatherSection
+          title={t("hourlyNext3")}
+          value={
+            beach.beachWeather?.hourlyNext3 ??
+            beach.beachWeather?.todayHourlyUntil20 ??
+            null
+          }
           locale={locale}
           labels={weatherLabels}
         />
@@ -856,6 +1076,7 @@ export default async function BeachDetailsPage({ params }: Props) {
         <HistoricalWeatherSection
           title={t("historicalSameDay")}
           points={beach.beachWeather?.historicalSameDay ?? []}
+          currentTemperature={temperatureFromWeatherJson(beach.beachWeather?.todayDaily)}
           locale={locale}
           labels={weatherLabels}
         />
