@@ -8,8 +8,8 @@
  */
 import {
   BEACH_PAGE_SIZE,
+  DEFAULT_NEAR_ME_RADIUS_KM,
   NEAR_ME_FETCH_SIZE,
-  NEAR_ME_RADIUS_KM,
   buildBeachSearchRequest,
   searchPois,
   type BeachPageWithDistances,
@@ -20,14 +20,16 @@ import type { PoiDto } from "@/lib/types/poi";
 export type BeachNearMeSearchOptions = {
   locale: string;
   page: number;
+  radiusKm?: number;
   beachPointTypeId: number;
   userCoords: { lat: number; lon: number };
+  allowedBeachIds?: Set<number>;
   name?: string;
   regionId?: number;
   municipalityId?: number;
   hasLifeguard?: boolean;
   hasShower?: boolean;
-  isSandy?: boolean;
+  beachSurface?: string;
 };
 
 export async function searchBeachesNearMeTemp(
@@ -36,7 +38,7 @@ export async function searchBeachesNearMeTemp(
   const bbox = bboxAround(
     options.userCoords.lat,
     options.userCoords.lon,
-    NEAR_ME_RADIUS_KM,
+    options.radiusKm ?? DEFAULT_NEAR_ME_RADIUS_KM,
   );
 
   const response = await searchPois(
@@ -52,7 +54,7 @@ export async function searchBeachesNearMeTemp(
       municipalityId: options.municipalityId,
       hasLifeguard: options.hasLifeguard,
       hasShower: options.hasShower,
-      isSandy: options.isSandy,
+      beachSurface: options.beachSurface,
       bbox,
     }),
   );
@@ -63,6 +65,11 @@ export async function searchBeachesNearMeTemp(
       km: distanceKm(options.userCoords, poi.coordinates),
     }))
     .filter((row): row is { poi: PoiDto; km: number } => row.km != null)
+    .filter(
+      (row) =>
+        options.allowedBeachIds == null || options.allowedBeachIds.has(row.poi.id),
+    )
+    .filter((row) => row.km <= (options.radiusKm ?? DEFAULT_NEAR_ME_RADIUS_KM))
     .sort((a, b) => a.km - b.km);
 
   const totalElements = ranked.length;

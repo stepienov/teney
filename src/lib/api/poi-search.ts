@@ -1,8 +1,13 @@
-import { apiPost } from "@/lib/api-client";
-import type { PoiDto, PoiSearchRequest, SpringPage } from "@/lib/types/poi";
+import { apiJson, apiPost } from "@/lib/api-client";
+import type {
+  BeachAttributes,
+  PoiDto,
+  PoiSearchRequest,
+  SpringPage,
+} from "@/lib/types/poi";
 
 export const BEACH_PAGE_SIZE = 10;
-export const NEAR_ME_RADIUS_KM = 50;
+export const DEFAULT_NEAR_ME_RADIUS_KM = 50;
 /** Max page size allowed by POST /api/pois/search (used only in near-me temp flow). */
 export const NEAR_ME_FETCH_SIZE = 100;
 
@@ -10,7 +15,29 @@ export const NEAR_ME_FETCH_SIZE = 100;
 export async function searchPois(
   request: PoiSearchRequest,
 ): Promise<SpringPage<PoiDto>> {
-  return apiPost<SpringPage<PoiDto>>("/api/pois/search", request);
+  const path = request.includeBeachWeather
+    ? "/api/pois/search?includeBeachWeather=true"
+    : "/api/pois/search";
+  const body = { ...request };
+  delete body.includeBeachWeather;
+
+  return apiPost<SpringPage<PoiDto>>(path, body);
+}
+
+export type BeachAttributeIndexItem = {
+  id: number;
+  attributes: BeachAttributes | null;
+};
+
+export async function fetchBeachAttributeIndex(): Promise<
+  BeachAttributeIndexItem[]
+> {
+  const beaches = await apiJson<BeachAttributeIndexItem[]>("/api/beaches");
+
+  return beaches.map((beach) => ({
+    id: beach.id,
+    attributes: beach.attributes ?? null,
+  }));
 }
 
 export type BeachSearchBuildOptions = {
@@ -24,7 +51,14 @@ export type BeachSearchBuildOptions = {
   municipalityId?: number;
   hasLifeguard?: boolean;
   hasShower?: boolean;
-  isSandy?: boolean;
+  beachSurface?: string;
+  hasSunbeds?: boolean;
+  hasShopNearby?: boolean;
+  hasRestaurantNearby?: boolean;
+  dogFriendly?: boolean;
+  hasWebcam?: boolean;
+  includeBeachWeather?: boolean;
+  weatherDate?: string;
   bbox?: {
     minLat: number;
     maxLat: number;
@@ -57,8 +91,8 @@ export function buildBeachSearchRequest(
   if (options.hasShower) {
     filters["details.hasShower"] = true;
   }
-  if (options.isSandy) {
-    filters["details.isSandy"] = true;
+  if (options.beachSurface) {
+    filters["details.beachSurface"] = options.beachSurface;
   }
   if (options.bbox) {
     filters["bbox.minLat"] = options.bbox.minLat;
@@ -74,6 +108,8 @@ export function buildBeachSearchRequest(
     sort: options.sort,
     sortDirection: options.sortDirection,
     locale: options.locale,
+    includeBeachWeather: options.includeBeachWeather,
+    weatherDate: options.weatherDate,
   };
 }
 

@@ -13,12 +13,18 @@ export type BeachSearchParams = {
   sort: string;
   sortDirection: "ASC" | "DESC";
   nearMe?: boolean;
+  radiusKm?: number;
   name?: string;
   regionId?: number;
   municipalityId?: number;
   hasLifeguard?: boolean;
   hasShower?: boolean;
-  isSandy?: boolean;
+  beachSurface?: string;
+  hasSunbeds?: boolean;
+  hasShopNearby?: boolean;
+  hasRestaurantNearby?: boolean;
+  dogFriendly?: boolean;
+  hasWebcam?: boolean;
 };
 
 export const beachFiltersQueryKey = ["beach-filters"] as const;
@@ -55,13 +61,19 @@ export function beachSearchQueryOptions(
         sortDirection: params.sortDirection,
         beachPointTypeId,
         nearMe: params.nearMe,
+        radiusKm: params.radiusKm,
         userCoords: params.nearMe ? userCoords : undefined,
         name: params.name,
         regionId: params.regionId,
         municipalityId: params.municipalityId,
         hasLifeguard: params.hasLifeguard,
         hasShower: params.hasShower,
-        isSandy: params.isSandy,
+        beachSurface: params.beachSurface,
+        hasSunbeds: params.hasSunbeds,
+        hasShopNearby: params.hasShopNearby,
+        hasRestaurantNearby: params.hasRestaurantNearby,
+        dogFriendly: params.dogFriendly,
+        hasWebcam: params.hasWebcam,
       });
     },
     enabled:

@@ -9,15 +9,29 @@ import { cn } from "@/lib/utils";
 type NearMeControlsProps = {
   active: boolean;
   geoStatus: "idle" | "loading" | "unsupported" | "denied" | "error" | "ready";
+  radiusKm: number;
+  accuracyMeters?: number;
   onEnable: () => void;
   onDisable: () => void;
+  onRadiusChange: (radiusKm: number) => void;
 };
+
+function formatAccuracy(meters: number): string {
+  if (meters < 1000) {
+    return `${Math.round(meters)} m`;
+  }
+
+  return `${(meters / 1000).toFixed(1)} km`;
+}
 
 export function NearMeControls({
   active,
   geoStatus,
+  radiusKm,
+  accuracyMeters,
   onEnable,
   onDisable,
+  onRadiusChange,
 }: NearMeControlsProps) {
   const t = useTranslations("beaches");
 
@@ -30,7 +44,7 @@ export function NearMeControls({
               {t("nearMeTitle")}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {t("nearMeHint")}
+              {t("nearMeHint", { radius: radiusKm })}
             </p>
           </div>
           <Button
@@ -55,7 +69,8 @@ export function NearMeControls({
           : "border-amber-200/80 bg-amber-50/90",
       )}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-ocean-teal shadow-sm">
             <MapPin className="size-5" aria-hidden />
@@ -66,7 +81,12 @@ export function NearMeControls({
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               {geoStatus === "loading" && t("nearMeLocating")}
-              {geoStatus === "ready" && t("nearMeSorted")}
+              {geoStatus === "ready" &&
+                t("nearMeSorted", {
+                  accuracy: accuracyMeters
+                    ? formatAccuracy(accuracyMeters)
+                    : t("unknown"),
+                })}
               {geoStatus === "denied" && t("nearMeDenied")}
               {geoStatus === "unsupported" && t("nearMeUnsupported")}
               {geoStatus === "error" && t("nearMeError")}
@@ -83,6 +103,24 @@ export function NearMeControls({
           <X className="size-3.5" aria-hidden />
           {t("nearMeDisable")}
         </Button>
+        </div>
+        <label className="grid gap-2 rounded-2xl bg-white/75 p-3 text-sm text-ocean-deep shadow-sm ring-1 ring-ocean-cyan/30">
+          <span className="flex items-center justify-between gap-3 font-semibold">
+            {t("nearMeRadius")}
+            <span className="text-ocean-teal">
+              {t("nearMeRadiusValue", { radius: radiusKm })}
+            </span>
+          </span>
+          <input
+            type="range"
+            min={5}
+            max={100}
+            step={5}
+            value={radiusKm}
+            onChange={(e) => onRadiusChange(Number(e.target.value))}
+            className="w-full accent-ocean-teal"
+          />
+        </label>
       </div>
     </div>
   );

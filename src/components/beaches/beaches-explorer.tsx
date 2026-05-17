@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { BeachCard } from "@/components/beaches/beach-card";
@@ -17,7 +17,10 @@ import {
   type GeolocationState,
 } from "@/hooks/use-geolocation";
 import { useRouter } from "@/i18n/routing";
-import type { BeachPageWithDistances } from "@/lib/api/poi-search";
+import {
+  DEFAULT_NEAR_ME_RADIUS_KM,
+  type BeachPageWithDistances,
+} from "@/lib/api/poi-search";
 import {
   beachFiltersQueryOptions,
   beachSearchQueryOptions,
@@ -32,13 +35,31 @@ const DEFAULT_FILTERS: BeachFilterState = {
   sortDirection: "ASC",
   hasLifeguard: false,
   hasShower: false,
-  isSandy: false,
+  beachSurface: "",
+  hasSunbeds: false,
+  hasShopNearby: false,
+  hasRestaurantNearby: false,
+  dogFriendly: false,
+  hasWebcam: false,
 };
 
-function parseFiltersFromParams(params: URLSearchParams): BeachFilterState & {
+type AppliedBeachFilters = BeachFilterState & {
   page: number;
   nearMe: boolean;
-} {
+  radiusKm: number;
+};
+
+function parseRadiusKm(value: string | null): number {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_NEAR_ME_RADIUS_KM;
+  }
+
+  return Math.min(100, Math.max(5, Math.round(parsed / 5) * 5));
+}
+
+function parseFiltersFromParams(params: URLSearchParams): AppliedBeachFilters {
   return {
     name: params.get("q") ?? "",
     regionId: params.get("region") ?? "",
@@ -49,9 +70,33 @@ function parseFiltersFromParams(params: URLSearchParams): BeachFilterState & {
       | "DESC",
     hasLifeguard: params.get("lifeguard") === "1",
     hasShower: params.get("shower") === "1",
-    isSandy: params.get("sandy") === "1",
+    beachSurface: params.get("surface") ?? "",
+    hasSunbeds: params.get("sunbeds") === "1",
+    hasShopNearby: params.get("shop") === "1",
+    hasRestaurantNearby: params.get("restaurant") === "1",
+    dogFriendly: params.get("dogs") === "1",
+    hasWebcam: params.get("webcam") === "1",
     page: Math.max(0, Number(params.get("page") ?? "0") || 0),
     nearMe: params.get("near") === "1",
+    radiusKm: parseRadiusKm(params.get("radius")),
+  };
+}
+
+function getDraftFilters(applied: AppliedBeachFilters): BeachFilterState {
+  return {
+    name: applied.name,
+    regionId: applied.regionId,
+    municipalityId: applied.municipalityId,
+    sort: applied.sort,
+    sortDirection: applied.sortDirection,
+    hasLifeguard: applied.hasLifeguard,
+    hasShower: applied.hasShower,
+    beachSurface: applied.beachSurface,
+    hasSunbeds: applied.hasSunbeds,
+    hasShopNearby: applied.hasShopNearby,
+    hasRestaurantNearby: applied.hasRestaurantNearby,
+    dogFriendly: applied.dogFriendly,
+    hasWebcam: applied.hasWebcam,
   };
 }
 
@@ -59,6 +104,7 @@ function filtersToSearchParams(
   filters: BeachFilterState,
   page: number,
   nearMe: boolean,
+  radiusKm: number,
 ): URLSearchParams {
   const p = new URLSearchParams();
   if (filters.name.trim()) p.set("q", filters.name.trim());
@@ -68,9 +114,19 @@ function filtersToSearchParams(
   if (filters.sortDirection !== "ASC") p.set("dir", filters.sortDirection);
   if (filters.hasLifeguard) p.set("lifeguard", "1");
   if (filters.hasShower) p.set("shower", "1");
-  if (filters.isSandy) p.set("sandy", "1");
+  if (filters.beachSurface) p.set("surface", filters.beachSurface);
+  if (filters.hasSunbeds) p.set("sunbeds", "1");
+  if (filters.hasShopNearby) p.set("shop", "1");
+  if (filters.hasRestaurantNearby) p.set("restaurant", "1");
+  if (filters.dogFriendly) p.set("dogs", "1");
+  if (filters.hasWebcam) p.set("webcam", "1");
   if (page > 0) p.set("page", String(page));
-  if (nearMe) p.set("near", "1");
+  if (nearMe) {
+    p.set("near", "1");
+    if (radiusKm !== DEFAULT_NEAR_ME_RADIUS_KM) {
+      p.set("radius", String(radiusKm));
+    }
+  }
   return p;
 }
 
@@ -79,6 +135,7 @@ function toSearchParams(
   page: number,
   locale: string,
   nearMe: boolean,
+  radiusKm: number,
 ): BeachSearchParams {
   return {
     locale,
@@ -86,6 +143,7 @@ function toSearchParams(
     sort: filters.sort,
     sortDirection: filters.sortDirection,
     nearMe,
+    radiusKm,
     name: filters.name.trim() || undefined,
     regionId: filters.regionId ? Number(filters.regionId) : undefined,
     municipalityId: filters.municipalityId
@@ -93,7 +151,12 @@ function toSearchParams(
       : undefined,
     hasLifeguard: filters.hasLifeguard || undefined,
     hasShower: filters.hasShower || undefined,
-    isSandy: filters.isSandy || undefined,
+    beachSurface: filters.beachSurface || undefined,
+    hasSunbeds: filters.hasSunbeds || undefined,
+    hasShopNearby: filters.hasShopNearby || undefined,
+    hasRestaurantNearby: filters.hasRestaurantNearby || undefined,
+    dogFriendly: filters.dogFriendly || undefined,
+    hasWebcam: filters.hasWebcam || undefined,
   };
 }
 
@@ -130,26 +193,30 @@ function isBeachPageWithDistances(
 }
 
 export function BeachesExplorer() {
-  const t = useTranslations("beaches");
-  const locale = useLocale();
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const urlParams = useSearchParams();
-
   const applied = useMemo(
     () => parseFiltersFromParams(urlParams),
     [urlParams],
   );
 
-  const [draft, setDraft] = useState<BeachFilterState>(() => {
-    const { page: _p, nearMe: _n, ...rest } = applied;
-    return rest;
-  });
+  return (
+    <BeachesExplorerContent key={urlParams.toString()} applied={applied} />
+  );
+}
 
-  useEffect(() => {
-    const { page: _p, nearMe: _n, ...rest } = applied;
-    setDraft(rest);
-  }, [applied]);
+function BeachesExplorerContent({
+  applied,
+}: {
+  applied: AppliedBeachFilters;
+}) {
+  const t = useTranslations("beaches");
+  const locale = useLocale();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const [draft, setDraft] = useState<BeachFilterState>(() => {
+    return getDraftFilters(applied);
+  });
 
   const geo = useGeolocation({ enabled: applied.nearMe });
   const userCoords = geo.status === "ready" ? geo.coords : undefined;
@@ -161,7 +228,13 @@ export function BeachesExplorer() {
 
   const searchParams = useMemo(
     () =>
-      toSearchParams(applied, applied.page, locale, applied.nearMe),
+      toSearchParams(
+        applied,
+        applied.page,
+        locale,
+        applied.nearMe,
+        applied.radiusKm,
+      ),
     [applied, locale],
   );
 
@@ -183,35 +256,47 @@ export function BeachesExplorer() {
     : undefined;
 
   const pushFilters = useCallback(
-    (filters: BeachFilterState, pageIndex: number, nearMe: boolean) => {
-      const qs = filtersToSearchParams(filters, pageIndex, nearMe).toString();
+    (
+      filters: BeachFilterState,
+      pageIndex: number,
+      nearMe: boolean,
+      radiusKm: number,
+    ) => {
+      const qs = filtersToSearchParams(
+        filters,
+        pageIndex,
+        nearMe,
+        radiusKm,
+      ).toString();
       router.push(qs ? `/beaches?${qs}` : "/beaches");
     },
     [router],
   );
 
   const enableNearMe = () => {
-    const { page: _p, nearMe: _n, ...f } = applied;
-    pushFilters(f, 0, true);
+    pushFilters(getDraftFilters(applied), 0, true, applied.radiusKm);
   };
 
   const disableNearMe = () => {
-    const { page: _p, nearMe: _n, ...f } = applied;
-    pushFilters(f, 0, false);
+    pushFilters(getDraftFilters(applied), 0, false, applied.radiusKm);
+  };
+
+  const changeRadius = (radiusKm: number) => {
+    pushFilters(getDraftFilters(applied), 0, true, radiusKm);
   };
 
   /** Apply → POST /api/pois/search (filters/sort/page from draft; near-me uses temp FE distance sort). */
   const applyFilters = useCallback(async () => {
     const nearMe = applied.nearMe;
     if (filterData?.beachPointTypeId == null) {
-      pushFilters(draft, 0, nearMe);
+      pushFilters(draft, 0, nearMe, applied.radiusKm);
       return;
     }
     if (nearMe && geo.status !== "ready") {
-      pushFilters(draft, 0, nearMe);
+      pushFilters(draft, 0, nearMe, applied.radiusKm);
       return;
     }
-    const params = toSearchParams(draft, 0, locale, nearMe);
+    const params = toSearchParams(draft, 0, locale, nearMe, applied.radiusKm);
     const coords = nearMe && geo.status === "ready" ? geo.coords : undefined;
     await queryClient.fetchQuery(
       beachSearchQueryOptions(
@@ -220,11 +305,12 @@ export function BeachesExplorer() {
         coords,
       ),
     );
-    pushFilters(draft, 0, nearMe);
+    pushFilters(draft, 0, nearMe, applied.radiusKm);
   }, [
     applied.nearMe,
+    applied.radiusKm,
     draft,
-    filterData?.beachPointTypeId,
+    filterData,
     geo,
     locale,
     pushFilters,
@@ -250,8 +336,13 @@ export function BeachesExplorer() {
         <NearMeControls
           active={applied.nearMe}
           geoStatus={geoStatus}
+          radiusKm={applied.radiusKm}
+          accuracyMeters={
+            geo.status === "ready" ? geo.coords.accuracyMeters : undefined
+          }
           onEnable={enableNearMe}
           onDisable={disableNearMe}
+          onRadiusChange={changeRadius}
         />
       </div>
 
@@ -266,7 +357,7 @@ export function BeachesExplorer() {
           onApply={() => void applyFilters()}
           onReset={() => {
             setDraft(DEFAULT_FILTERS);
-            pushFilters(DEFAULT_FILTERS, 0, applied.nearMe);
+            pushFilters(DEFAULT_FILTERS, 0, applied.nearMe, applied.radiusKm);
           }}
         />
       ) : null}
@@ -331,8 +422,12 @@ export function BeachesExplorer() {
             className="rounded-full"
             disabled={page.first}
             onClick={() => {
-              const { page: _p, nearMe, ...f } = applied;
-              pushFilters(f, applied.page - 1, nearMe);
+              pushFilters(
+                getDraftFilters(applied),
+                applied.page - 1,
+                applied.nearMe,
+                applied.radiusKm,
+              );
             }}
           >
             {t("prev")}
@@ -343,8 +438,12 @@ export function BeachesExplorer() {
             className="rounded-full"
             disabled={page.last}
             onClick={() => {
-              const { page: _p, nearMe, ...f } = applied;
-              pushFilters(f, applied.page + 1, nearMe);
+              pushFilters(
+                getDraftFilters(applied),
+                applied.page + 1,
+                applied.nearMe,
+                applied.radiusKm,
+              );
             }}
           >
             {t("next")}

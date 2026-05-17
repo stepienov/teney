@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type UserCoords = { lat: number; lon: number };
+export type UserCoords = { lat: number; lon: number; accuracyMeters: number };
 
 export type GeolocationState =
   | { status: "idle" }
@@ -21,44 +21,60 @@ export function useGeolocation({ enabled }: Options): GeolocationState {
 
   useEffect(() => {
     if (!enabled) {
-      setState({ status: "idle" });
       return;
     }
+
+    let cancelled = false;
+    const commit = (next: GeolocationState) => {
+      if (!cancelled) {
+        setState(next);
+      }
+    };
+    const commitAsync = (next: GeolocationState) => {
+      queueMicrotask(() => commit(next));
+    };
 
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setState({ status: "unsupported" });
-      return;
+      commitAsync({ status: "unsupported" });
+      return () => {
+        cancelled = true;
+      };
     }
 
-    setState({ status: "loading" });
+    commitAsync({ status: "loading" });
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setState({
+        commit({
           status: "ready",
           coords: {
             lat: position.coords.latitude,
             lon: position.coords.longitude,
+            accuracyMeters: position.coords.accuracy,
           },
         });
       },
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
-          setState({ status: "denied" });
+          commit({ status: "denied" });
           return;
         }
-        setState({
+        commit({
           status: "error",
           message: error.message || "Geolocation failed",
         });
       },
       {
-        enableHighAccuracy: false,
+        enableHighAccuracy: true,
         timeout: 20_000,
-        maximumAge: 5 * 60_000,
+        maximumAge: 30_000,
       },
     );
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled]);
 
-  return state;
+  return enabled ? state : { status: "idle" };
 }

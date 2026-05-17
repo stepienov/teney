@@ -14,7 +14,12 @@ export type BeachFilterState = {
   sortDirection: "ASC" | "DESC";
   hasLifeguard: boolean;
   hasShower: boolean;
-  isSandy: boolean;
+  beachSurface: string;
+  hasSunbeds: boolean;
+  hasShopNearby: boolean;
+  hasRestaurantNearby: boolean;
+  dogFriendly: boolean;
+  hasWebcam: boolean;
 };
 
 type BeachFiltersProps = {
@@ -182,13 +187,79 @@ export function BeachFilters({
           <label className="flex items-center gap-2 text-sm text-ocean-deep">
             <input
               type="checkbox"
-              checked={value.isSandy}
+              checked={value.hasSunbeds}
               onChange={(e) =>
-                onChange({ ...value, isSandy: e.target.checked })
+                onChange({ ...value, hasSunbeds: e.target.checked })
               }
               className="size-4 rounded border-border accent-ocean-teal"
             />
-            {t("filterSandy")}
+            {t("filterSunbeds")}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ocean-deep">
+            <input
+              type="checkbox"
+              checked={value.hasShopNearby}
+              onChange={(e) =>
+                onChange({ ...value, hasShopNearby: e.target.checked })
+              }
+              className="size-4 rounded border-border accent-ocean-teal"
+            />
+            {t("filterShopNearby")}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ocean-deep">
+            <input
+              type="checkbox"
+              checked={value.hasRestaurantNearby}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  hasRestaurantNearby: e.target.checked,
+                })
+              }
+              className="size-4 rounded border-border accent-ocean-teal"
+            />
+            {t("filterRestaurantNearby")}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ocean-deep">
+            <input
+              type="checkbox"
+              checked={value.dogFriendly}
+              onChange={(e) =>
+                onChange({ ...value, dogFriendly: e.target.checked })
+              }
+              className="size-4 rounded border-border accent-ocean-teal"
+            />
+            {t("filterDogFriendly")}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ocean-deep">
+            <input
+              type="checkbox"
+              checked={value.hasWebcam}
+              onChange={(e) =>
+                onChange({ ...value, hasWebcam: e.target.checked })
+              }
+              className="size-4 rounded border-border accent-ocean-teal"
+            />
+            {t("filterWebcam")}
+          </label>
+          <label className="flex min-w-48 flex-col gap-1.5 text-sm text-ocean-deep">
+            <span className="text-xs font-semibold uppercase tracking-wide text-ocean-teal">
+              {t("filterSurface")}
+            </span>
+            <select
+              className={inputClass}
+              value={value.beachSurface}
+              onChange={(e) =>
+                onChange({ ...value, beachSurface: e.target.value })
+              }
+            >
+              <option value="">{t("allSurfaces")}</option>
+              <option value="LIGHT_SAND">{t("surfaceLightSand")}</option>
+              <option value="VOLCANIC_SAND">
+                {t("surfaceVolcanicSand")}
+              </option>
+              <option value="STONES">{t("surfaceStones")}</option>
+            </select>
           </label>
         </fieldset>
       </div>

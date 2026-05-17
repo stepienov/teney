@@ -1,7 +1,8 @@
 import Image from "next/image";
-import { MapPin, Navigation, Umbrella } from "lucide-react";
+import { CloudSun, MapPin, Navigation, Umbrella } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { Link } from "@/i18n/routing";
 import { formatDistanceKm } from "@/lib/geo/distance";
 import type { PoiDto } from "@/lib/types/poi";
 
@@ -58,6 +59,22 @@ export function BeachCard({ beach, distanceKm }: BeachCardProps) {
           </p>
         )}
 
+        {beach.weather && (
+          <p className="flex items-center gap-1.5 rounded-2xl bg-ocean-foam px-3 py-2 text-sm text-ocean-deep">
+            <CloudSun className="size-4 shrink-0" aria-hidden />
+            {[
+              beach.weather.temperature != null
+                ? t("temperatureValue", {
+                    value: Math.round(beach.weather.temperature),
+                  })
+                : null,
+              beach.weather.conditions,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
+
         <ul className="flex flex-wrap gap-2 text-xs font-medium">
           <li className="rounded-full bg-ocean-cyan/40 px-2.5 py-1 text-ocean-deep">
             {beach.isFree ? t("free") : t("paid")}
@@ -78,6 +95,13 @@ export function BeachCard({ beach, distanceKm }: BeachCardProps) {
             </li>
           )}
         </ul>
+
+        <Link
+          href={`/beaches/${beach.id}`}
+          className="inline-flex rounded-full bg-ocean-deep px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-ocean-teal"
+        >
+          {t("viewDetails")}
+        </Link>
       </div>
     </article>
   );
