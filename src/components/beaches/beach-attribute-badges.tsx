@@ -71,6 +71,13 @@ type BeachAttributeBadgesProps = {
   showDistance?: boolean;
 };
 
+function badgeVariant(item: BeachBadgeItem): "default" | "paid" {
+  if (item.kind === "static" || item.kind === "toggle") {
+    return item.variant === "paid" ? "paid" : "default";
+  }
+  return "default";
+}
+
 function badgeClass(size: "sm" | "md", variant: "default" | "paid"): string {
   const sizeClass =
     size === "sm"
@@ -246,10 +253,7 @@ export function BeachAttributeBadges({
         }
 
         return (
-          <span
-            key={item.label}
-            className={badgeClass(size, item.variant === "paid" ? "paid" : "default")}
-          >
+          <span key={item.label} className={badgeClass(size, badgeVariant(item))}>
             {item.label}
           </span>
         );
