@@ -15,6 +15,8 @@ import {
   type BeachPageWithDistances,
 } from "@/lib/api/poi-search";
 import { bboxAround, distanceKm } from "@/lib/geo/distance";
+import { poiMatchesGeoFilter } from "@/lib/beach-geo-filter";
+import { poiMatchesSurfaceFilter } from "@/lib/beach-surface-filter";
 import type { PoiDto } from "@/lib/types/poi";
 
 export type BeachNearMeSearchOptions = {
@@ -31,6 +33,9 @@ export type BeachNearMeSearchOptions = {
   hasLifeguard?: boolean;
   hasShower?: boolean;
   beachSurface?: string;
+  beachSurfaces?: string[];
+  regionNames?: string[];
+  municipalityNames?: string[];
 };
 
 export async function searchBeachesNearMeTemp(
@@ -69,6 +74,16 @@ export async function searchBeachesNearMeTemp(
     .filter(
       (row) =>
         options.allowedBeachIds == null || options.allowedBeachIds.has(row.poi.id),
+    )
+    .filter((row) =>
+      poiMatchesGeoFilter(
+        row.poi,
+        options.regionNames ?? [],
+        options.municipalityNames ?? [],
+      ),
+    )
+    .filter((row) =>
+      poiMatchesSurfaceFilter(row.poi, options.beachSurfaces ?? []),
     )
     .filter((row) => radiusKm <= 0 || row.km <= radiusKm)
     .sort((a, b) =>

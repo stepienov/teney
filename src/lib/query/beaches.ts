@@ -16,10 +16,13 @@ export type BeachSearchParams = {
   nearMe?: boolean;
   radiusKm?: number;
   name?: string;
-  regionId?: number;
-  municipalityId?: number;
+  regionIds?: string[];
+  municipalityIds?: string[];
+  regionNames?: string[];
+  municipalityNames?: string[];
   hasLifeguard?: boolean;
   hasShower?: boolean;
+  beachSurfaces?: string[];
   beachSurface?: string;
   hasSunbeds?: boolean;
   hasShopNearby?: boolean;
@@ -66,11 +69,15 @@ export function beachSearchQueryOptions(
         radiusKm: params.radiusKm,
         userCoords: params.nearMe ? userCoords : undefined,
         name: params.name,
-        regionId: params.regionId,
-        municipalityId: params.municipalityId,
+        regionIds: params.regionIds,
+        municipalityIds: params.municipalityIds,
+        regionNames: params.regionNames,
+        municipalityNames: params.municipalityNames,
         hasLifeguard: params.hasLifeguard,
         hasShower: params.hasShower,
-        beachSurface: params.beachSurface,
+        beachSurface:
+          params.beachSurfaces?.length === 1 ? params.beachSurfaces[0] : undefined,
+        beachSurfaces: params.beachSurfaces,
         hasSunbeds: params.hasSunbeds,
         hasShopNearby: params.hasShopNearby,
         hasRestaurantNearby: params.hasRestaurantNearby,

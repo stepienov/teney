@@ -66,6 +66,8 @@ export type BeachSearchBuildOptions = {
   name?: string;
   regionId?: number;
   municipalityId?: number;
+  regionNames?: string[];
+  municipalityNames?: string[];
   hasLifeguard?: boolean;
   hasShower?: boolean;
   beachSurface?: string;

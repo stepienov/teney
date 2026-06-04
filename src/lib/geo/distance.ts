@@ -25,6 +25,12 @@ export function formatDistanceKm(km: number): string {
   return `${Math.round(km)} km`;
 }
 
+/** Najdłuższa typowa etykieta kafelka (ikona + tekst) — do dopasowania szerokości. */
+export const DISTANCE_BADGE_WIDTH_LABEL = "999 km";
+
+/** Stała szerokość (ikona + md: text-xs + px-2) dla kafelków odległości. */
+export const distanceBadgeWidthClass = "w-[4.25rem] min-w-[4.25rem] max-w-[4.25rem]";
+
 /** Bounding box ~radiusKm around a point (WGS84). */
 export function bboxAround(
   lat: number,

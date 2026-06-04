@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { AppShell } from "@/components/layout/app-shell";
 import { AppProviders } from "@/components/providers/app-providers";
 import { type AppLocale, routing } from "@/i18n/routing";
 
@@ -58,12 +57,10 @@ export default async function LocaleLayout({ children, params }: Props) {
       lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="overflow-hidden" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <AppProviders>
-            <SiteHeader />
-            <main className="flex flex-1 flex-col">{children}</main>
-            <SiteFooter />
+            <AppShell>{children}</AppShell>
           </AppProviders>
         </NextIntlClientProvider>
       </body>

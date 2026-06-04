@@ -1,6 +1,16 @@
 import { searchBeachesNearMeTemp } from "@/lib/api/beach-search-near-me-temp";
 import { apiJson } from "@/lib/api-client";
 import {
+  apiGeoFilterIds,
+  needsClientGeoFilter,
+  poiMatchesGeoFilter,
+} from "@/lib/beach-geo-filter";
+import {
+  apiSurfaceFilter,
+  needsClientSurfaceFilter,
+  poiMatchesSurfaceFilter,
+} from "@/lib/beach-surface-filter";
+import {
   BEACH_PAGE_SIZE,
   buildBeachSearchRequest,
   fetchBeachAttributeIndex,
@@ -20,6 +30,9 @@ export type BeachSearchOptions = BeachSearchBuildOptions & {
   nearMe?: boolean;
   radiusKm?: number;
   userCoords?: UserCoords;
+  regionIds?: string[];
+  municipalityIds?: string[];
+  beachSurfaces?: string[];
 };
 
 function isTruthyAttribute(value: unknown): boolean {
@@ -87,16 +100,14 @@ async function matchingBeachIdsForAttributes(
   );
 }
 
-function paginateFilteredPage(
+function paginateContent(
   content: PoiDto[],
-  ids: Set<number>,
   page: number,
 ): SpringPage<PoiDto> {
-  const filtered = content.filter((poi) => ids.has(poi.id));
-  const totalElements = filtered.length;
+  const totalElements = content.length;
   const totalPages = Math.max(1, Math.ceil(totalElements / BEACH_PAGE_SIZE));
   const pageIndex = Math.min(Math.max(0, page), totalPages - 1);
-  const slice = filtered.slice(
+  const slice = content.slice(
     pageIndex * BEACH_PAGE_SIZE,
     pageIndex * BEACH_PAGE_SIZE + BEACH_PAGE_SIZE,
   );
@@ -114,16 +125,46 @@ function paginateFilteredPage(
   };
 }
 
+function filterByGeoNames(
+  content: PoiDto[],
+  regionNames: string[] | undefined,
+  municipalityNames: string[] | undefined,
+): PoiDto[] {
+  const regions = regionNames ?? [];
+  const municipalities = municipalityNames ?? [];
+
+  if (regions.length === 0 && municipalities.length === 0) {
+    return content;
+  }
+
+  return content.filter((poi) => poiMatchesGeoFilter(poi, regions, municipalities));
+}
+
+function filterBySurfaces(content: PoiDto[], surfaces: string[] | undefined): PoiDto[] {
+  const selected = surfaces ?? [];
+  if (selected.length === 0) {
+    return content;
+  }
+  return content.filter((poi) => poiMatchesSurfaceFilter(poi, selected));
+}
+
 /**
  * Beach list search — always goes through POST /api/pois/search.
- * Filters, sort, page and size are sent to the API (see buildBeachSearchRequest).
  */
 export async function searchBeaches(
   options: BeachSearchOptions,
 ): Promise<SpringPage<PoiDto> | BeachPageWithDistances> {
-  const { nearMe, userCoords, ...apiOptions } = options;
+  const { nearMe, userCoords, regionNames, municipalityNames, ...apiOptions } =
+    options;
   const beachPointTypeId = apiOptions.beachPointTypeId;
   const attributeIds = await matchingBeachIdsForAttributes(options);
+  const regionIds = options.regionIds ?? [];
+  const municipalityIds = options.municipalityIds ?? [];
+  const beachSurfaces = options.beachSurfaces ?? [];
+  const clientGeo = needsClientGeoFilter(regionIds, municipalityIds);
+  const clientSurface = needsClientSurfaceFilter(beachSurfaces);
+  const apiGeo = apiGeoFilterIds(regionIds, municipalityIds);
+  const apiSurface = apiSurfaceFilter(beachSurfaces);
 
   if (beachPointTypeId == null) {
     throw new Error("Beach point type is required for beach search");
@@ -139,27 +180,51 @@ export async function searchBeaches(
       userCoords,
       allowedBeachIds: attributeIds ?? undefined,
       name: apiOptions.name,
-      regionId: apiOptions.regionId,
-      municipalityId: apiOptions.municipalityId,
+      regionId: clientGeo ? undefined : apiGeo.regionId,
+      municipalityId: clientGeo ? undefined : apiGeo.municipalityId,
+      regionNames: clientGeo ? regionNames : undefined,
+      municipalityNames: clientGeo ? municipalityNames : undefined,
       hasLifeguard: apiOptions.hasLifeguard,
       hasShower: apiOptions.hasShower,
-      beachSurface: apiOptions.beachSurface,
+      beachSurface: clientSurface ? undefined : apiSurface,
+      beachSurfaces: clientSurface ? beachSurfaces : undefined,
     });
   }
 
-  if (attributeIds != null) {
+  const useClientPipeline = attributeIds != null || clientGeo || clientSurface;
+
+  if (useClientPipeline) {
     const response = await searchPois(
       buildBeachSearchRequest({
         ...apiOptions,
+        ...apiGeo,
+        beachSurface: clientSurface ? undefined : apiSurface,
         page: 0,
         size: 100,
       }),
     );
 
-    return paginateFilteredPage(response.content, attributeIds, apiOptions.page);
+    let filtered = response.content;
+    if (attributeIds != null) {
+      filtered = filtered.filter((poi) => attributeIds.has(poi.id));
+    }
+    if (clientGeo) {
+      filtered = filterByGeoNames(filtered, regionNames, municipalityNames);
+    }
+    if (clientSurface) {
+      filtered = filterBySurfaces(filtered, beachSurfaces);
+    }
+
+    return paginateContent(filtered, apiOptions.page);
   }
 
-  return searchPois(buildBeachSearchRequest(apiOptions));
+  return searchPois(
+    buildBeachSearchRequest({
+      ...apiOptions,
+      ...apiGeo,
+      beachSurface: apiSurface,
+    }),
+  );
 }
 
 export async function fetchBeachById(options: {
