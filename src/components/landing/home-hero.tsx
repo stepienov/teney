@@ -1,8 +1,9 @@
-import { ArrowRight, Umbrella } from "lucide-react";
+import { ArrowRight, Waves } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/routing";
+import { cn } from "@/lib/utils";
 
 export async function HomeHero() {
   const t = await getTranslations("home");
@@ -13,52 +14,27 @@ export async function HomeHero() {
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.75rem]">
           {t("dashboardTitle")}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          {t("tagline")}
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("tagline")}</p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <article className="rounded-lg border border-border bg-white p-5 shadow-sm">
-          <div className="flex size-10 items-center justify-center rounded-md bg-brand-muted text-brand">
-            <Umbrella className="size-5" aria-hidden />
+      <article className="max-w-md rounded-lg border border-border bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-brand-muted text-brand">
+            <Waves className="size-5" aria-hidden />
           </div>
-          <h2 className="mt-4 text-base font-semibold text-foreground">
-            {t("cardBeachesTitle")}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">{t("cardBeachesBody")}</p>
-          <Button
-            nativeButton={false}
-            className="mt-5 gap-1.5"
-            render={
-              <Link href="/beaches">
-                {t("ctaBeaches")}
-                <ArrowRight className="size-4" />
-              </Link>
-            }
-          />
-        </article>
-
-        <article className="rounded-lg border border-dashed border-border bg-muted/40 p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("badge")}
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">{t("cardSoonBody")}</p>
-        </article>
-
-        <article className="rounded-lg border border-dashed border-border bg-muted/40 p-5 sm:col-span-2 lg:col-span-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("cardAboutLabel")}
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">{t("cardAboutBody")}</p>
-          <Button
-            variant="outline"
-            nativeButton={false}
-            className="mt-5"
-            render={<Link href="/about">{t("ctaAbout")}</Link>}
-          />
-        </article>
-      </div>
+          <h2 className="text-base font-semibold text-foreground">{t("cardBeachesTitle")}</h2>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          {t("cardBeachesBody")}
+        </p>
+        <Link
+          href="/beaches"
+          className={cn(buttonVariants(), "mt-5 gap-1.5")}
+        >
+          {t("ctaBeaches")}
+          <ArrowRight className="size-4" />
+        </Link>
+      </article>
     </div>
   );
 }

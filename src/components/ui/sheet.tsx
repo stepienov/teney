@@ -23,7 +23,13 @@ function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
 }
 
-function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
+function SheetOverlay({
+  className,
+  onClick,
+  ...props
+}: SheetPrimitive.Backdrop.Props & {
+  onClick?: () => void
+}) {
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
@@ -31,25 +37,47 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
         "fixed inset-0 z-50 bg-black/10 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs",
         className
       )}
+      onClick={onClick}
       {...props}
     />
   )
 }
 
-function SheetContent({
-  className,
-  children,
-  side = "right",
-  showCloseButton = true,
-  ...props
-}: SheetPrimitive.Popup.Props & {
-  side?: "top" | "right" | "bottom" | "left"
-  showCloseButton?: boolean
-}) {
+const SheetContent = React.forwardRef<
+  HTMLDivElement,
+  SheetPrimitive.Popup.Props & {
+    side?: "top" | "right" | "bottom" | "left"
+    showCloseButton?: boolean
+    onBackdropClick?: () => void
+    backdropSwipeHandlers?: {
+      onTouchStart?: (event: React.TouchEvent) => void
+      onTouchMove?: (event: React.TouchEvent) => void
+      onTouchEnd?: (event: React.TouchEvent) => void
+      onTouchCancel?: (event: React.TouchEvent) => void
+    }
+  }
+>(function SheetContent(
+  {
+    className,
+    children,
+    side = "right",
+    showCloseButton = true,
+    onBackdropClick,
+    backdropSwipeHandlers,
+    ...props
+  },
+  ref,
+) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay
+        onClick={() => {
+          onBackdropClick?.()
+        }}
+        {...backdropSwipeHandlers}
+      />
       <SheetPrimitive.Popup
+        ref={ref}
         data-slot="sheet-content"
         data-side={side}
         className={cn(
@@ -78,7 +106,7 @@ function SheetContent({
       </SheetPrimitive.Popup>
     </SheetPortal>
   )
-}
+})
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (

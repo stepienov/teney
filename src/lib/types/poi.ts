@@ -31,6 +31,12 @@ export type Address = {
   extraInfo: string | null;
 };
 
+export type WeatherReadinessStatus =
+  | "READY"
+  | "PENDING"
+  | "MISSING"
+  | "NOT_APPLICABLE";
+
 export type Weather = {
   temperature: number | null;
   conditions?: string | null;
@@ -81,8 +87,10 @@ export type PoiDto = {
   visitorLimit: number | null;
   address: Address | null;
   weather: Weather | null;
+  weatherStatus?: WeatherReadinessStatus;
   beachDetails: BeachDetails | null;
   beachWeather: BeachWeather | null;
+  beachWeatherStatus?: WeatherReadinessStatus | null;
   attributes?: BeachAttributes | null;
 };
 
@@ -120,4 +128,25 @@ export type MunicipalityRef = {
 export type PointTypeRef = {
   id: number;
   description: string;
+};
+
+export type PoiWeatherBatchRequest = {
+  ids: number[];
+  includeBeachWeather?: boolean;
+  weatherDate?: string;
+};
+
+export type PoiWeatherEntry = {
+  poiId: number;
+  currentStatus: WeatherReadinessStatus;
+  current: Weather | null;
+  beachStatus?: WeatherReadinessStatus | null;
+  beachWeather?: BeachWeather | null;
+};
+
+export type PoiWeatherBatchResponse = {
+  entries: PoiWeatherEntry[];
+  readyCount: number;
+  pendingCount: number;
+  complete: boolean;
 };

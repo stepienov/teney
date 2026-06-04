@@ -2,10 +2,10 @@
 
 import { Check, ChevronDown, Languages } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { type AppLocale, localeLabels, usePathname, useRouter } from "@/i18n/routing";
+import { currentSearchQuery } from "@/lib/locale-href";
 import { cn } from "@/lib/utils";
 
 type LocaleSwitcherProps = {
@@ -13,7 +13,7 @@ type LocaleSwitcherProps = {
   variant?: "hero" | "default";
 };
 
-function LocaleSwitcherMenu({
+export function LocaleSwitcher({
   className,
   variant = "default",
 }: LocaleSwitcherProps) {
@@ -21,14 +21,13 @@ function LocaleSwitcherMenu({
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   const isHero = variant === "hero";
 
   function switchLocale(next: AppLocale) {
-    const qs = searchParams.toString();
+    const qs = currentSearchQuery();
     const href = qs ? `${pathname}?${qs}` : pathname;
     router.replace(href, { locale: next });
     setOpen(false);
@@ -122,22 +121,5 @@ function LocaleSwitcherMenu({
         </ul>
       )}
     </div>
-  );
-}
-
-function LocaleSwitcherFallback({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn("h-9 w-[8.5rem] animate-pulse rounded-full bg-muted/50", className)}
-      aria-hidden
-    />
-  );
-}
-
-export function LocaleSwitcher(props: LocaleSwitcherProps) {
-  return (
-    <Suspense fallback={<LocaleSwitcherFallback className={props.className} />}>
-      <LocaleSwitcherMenu {...props} />
-    </Suspense>
   );
 }

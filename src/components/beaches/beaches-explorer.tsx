@@ -1,37 +1,66 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useSearchParams } from "next/navigation";
 
 import { BeachFilterBar } from "@/components/beaches/beach-filter-bar";
-import {
-  EMPTY_BEACH_FILTERS,
-  type BeachFilterState,
-} from "@/components/beaches/beach-filter-state";
+import { type BeachFilterState } from "@/components/beaches/beach-filter-state";
 import { BeachCard } from "@/components/beaches/beach-card";
+import { BeachLoadMoreSentinel } from "@/components/beaches/beach-load-more-sentinel";
+import { BeachLoadingIndicator } from "@/components/beaches/beach-loading-indicator";
+import { BeachPaginationBar } from "@/components/beaches/beach-pagination-bar";
 import { BeachResultsTable } from "@/components/beaches/beach-results-table";
-import { Button } from "@/components/ui/button";
-import { useGeolocation } from "@/hooks/use-geolocation";
+import { useGeolocation, type GeolocationHandle } from "@/hooks/use-geolocation";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { usePoiWeatherBackgroundSync } from "@/hooks/use-poi-weather-polling";
 import { useLocalStorageChoice } from "@/hooks/use-local-storage-flag";
 import { useRouter } from "@/i18n/routing";
 import { resolveGeoFilterNames } from "@/lib/beach-geo-filter";
 import { DEFAULT_NEAR_ME_RADIUS_KM } from "@/lib/api/poi-search";
 import {
   getDistancesKmFromPage,
+  mergeDistancesKmFromPages,
   resolveBeachDistanceKm,
 } from "@/lib/beach-distance";
 import {
+  DEFAULT_BEACH_PAGE_SIZE,
+  parseBeachPageSize,
+  type BeachPageSize,
+} from "@/lib/beach-pagination";
+import {
   beachFiltersQueryOptions,
+  beachSearchInfiniteQueryOptions,
   beachSearchQueryOptions,
+  type BeachSearchBaseParams,
   type BeachSearchParams,
 } from "@/lib/query/beaches";
 
 const VIEW_STORAGE_KEY = "teney-beach-view";
 
+function isGeoFailed(geo: GeolocationHandle): boolean {
+  return (
+    geo.status === "denied" ||
+    geo.status === "unsupported" ||
+    geo.status === "error" ||
+    geo.permission === "denied"
+  );
+}
+
+function isGeoPending(geo: GeolocationHandle): boolean {
+  return geo.status === "idle" || geo.status === "loading";
+}
+
 type AppliedBeachFilters = BeachFilterState & {
   page: number;
+  pageSize: BeachPageSize;
   nearMe: boolean;
   radiusKm: number;
 };
@@ -66,7 +95,10 @@ function parseRadiusKm(value: string | null): number {
 
 function normalizeSortParam(sort: string | null): string {
   const value = sort ?? "name";
-  return value === "municipality.name" ? "name" : value;
+  if (value === "municipality.name" || value === "region.name") {
+    return "name";
+  }
+  return value;
 }
 
 function parseFiltersFromParams(params: URLSearchParams): AppliedBeachFilters {
@@ -86,6 +118,7 @@ function parseFiltersFromParams(params: URLSearchParams): AppliedBeachFilters {
     dogFriendly: params.get("dogs") === "1",
     hasWebcam: params.get("webcam") === "1",
     page: Math.max(0, Number(params.get("page") ?? "0") || 0),
+    pageSize: parseBeachPageSize(params.get("size")),
     nearMe: params.get("near") === "1",
     radiusKm: parseRadiusKm(params.get("radius")),
   };
@@ -113,12 +146,12 @@ function filtersToSearchParams(
   page: number,
   nearMe: boolean,
   radiusKm: number,
+  pageSize: number,
 ): URLSearchParams {
   const p = new URLSearchParams();
   if (filters.name.trim()) p.set("q", filters.name.trim());
   if (filters.regionIds.length) p.set("regions", filters.regionIds.join(","));
   if (filters.sort !== "name") p.set("sort", filters.sort);
-  if (filters.sortDirection !== "ASC") p.set("dir", filters.sortDirection);
   if (filters.hasLifeguard) p.set("lifeguard", "1");
   if (filters.hasShower) p.set("shower", "1");
   if (filters.beachSurfaces.length) {
@@ -130,6 +163,7 @@ function filtersToSearchParams(
   if (filters.dogFriendly) p.set("dogs", "1");
   if (filters.hasWebcam) p.set("webcam", "1");
   if (page > 0) p.set("page", String(page));
+  if (pageSize !== DEFAULT_BEACH_PAGE_SIZE) p.set("size", String(pageSize));
   if (nearMe) {
     p.set("near", "1");
     if (radiusKm > 0 && radiusKm !== DEFAULT_NEAR_ME_RADIUS_KM) {
@@ -139,14 +173,18 @@ function filtersToSearchParams(
   return p;
 }
 
-function toSearchParams(
+function toSearchBaseParams(
   filters: BeachFilterState,
-  page: number,
   locale: string,
   nearMe: boolean,
   radiusKm: number,
-  municipalities: { id: number; name: string; regionDirectionId: number; regionDirectionName: string }[],
-): BeachSearchParams {
+  municipalities: {
+    id: number;
+    name: string;
+    regionDirectionId: number;
+    regionDirectionName: string;
+  }[],
+): BeachSearchBaseParams {
   const { regionNames } = resolveGeoFilterNames(
     municipalities,
     filters.regionIds,
@@ -155,7 +193,6 @@ function toSearchParams(
 
   return {
     locale,
-    page,
     sort: filters.sort,
     sortDirection: filters.sortDirection,
     nearMe,
@@ -193,49 +230,98 @@ function BeachesExplorerContent({
   const t = useTranslations("beaches");
   const locale = useLocale();
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  const wantsLocationSortRef = useRef(false);
+  const geoBootstrappedRef = useRef(false);
 
   const [viewMode, setViewMode] = useLocalStorageChoice(
     VIEW_STORAGE_KEY,
     ["grid", "list"] as const,
     "list",
   );
-  const locationSortDismissedRef = useRef(false);
 
-  const geo = useGeolocation({ enabled: true });
+  const geo = useGeolocation({ enabled: false });
   const userCoords = geo.status === "ready" ? geo.coords : undefined;
+  const locationSortActive = applied.nearMe && userCoords != null;
+
+  const committedFilters = useMemo(
+    () => getDraftFilters(applied),
+    [applied],
+  );
 
   const { data: filterData, isLoading: filtersLoading } = useQuery(
     beachFiltersQueryOptions(),
   );
 
-  const searchParams = useMemo(
+  const municipalities = filterData?.municipalities ?? [];
+
+  const baseSearchParams = useMemo(
     () =>
-      toSearchParams(
+      toSearchBaseParams(
         applied,
-        applied.page,
         locale,
-        applied.nearMe,
+        locationSortActive,
         applied.radiusKm,
-        filterData?.municipalities ?? [],
+        municipalities,
       ),
-    [applied, locale, filterData?.municipalities],
+    [applied, locale, locationSortActive, municipalities],
+  );
+
+  const desktopSearchParams = useMemo<BeachSearchParams>(
+    () => ({
+      ...baseSearchParams,
+      page: applied.page,
+      pageSize: applied.pageSize,
+    }),
+    [baseSearchParams, applied.page, applied.pageSize],
   );
 
   const {
     data: page,
-    isPending,
-    isError,
-    isFetching,
-  } = useQuery(
-    beachSearchQueryOptions(
-      searchParams,
+    isPending: desktopPending,
+    isError: desktopError,
+  } = useQuery({
+    ...beachSearchQueryOptions(
+      desktopSearchParams,
       filterData?.beachPointTypeId,
       userCoords,
     ),
-  );
+    enabled: !isMobile,
+  });
 
-  const distancesKm = getDistancesKmFromPage(page);
+  const {
+    data: infiniteData,
+    isPending: mobilePending,
+    isError: mobileError,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    ...beachSearchInfiniteQueryOptions(
+      baseSearchParams,
+      filterData?.beachPointTypeId,
+      userCoords,
+    ),
+    enabled: isMobile,
+  });
+
+  const beaches = isMobile
+    ? (infiniteData?.pages.flatMap((resultPage) => resultPage.content) ?? [])
+    : (page?.content ?? []);
+
+  const totalPages = isMobile
+    ? (infiniteData?.pages[0]?.totalPages ?? 0)
+    : (page?.totalPages ?? 0);
+
+  const distancesKm = isMobile
+    ? mergeDistancesKmFromPages(infiniteData?.pages ?? [])
+    : getDistancesKmFromPage(page);
+
+  const isPending = isMobile ? mobilePending : desktopPending;
+  const isError = isMobile ? mobileError : desktopError;
+  const isEmpty = isMobile
+    ? infiniteData != null && beaches.length === 0
+    : Boolean(page?.empty);
 
   const pushFilters = useCallback(
     (
@@ -243,231 +329,221 @@ function BeachesExplorerContent({
       pageIndex: number,
       nearMe: boolean,
       radiusKm: number,
+      pageSize: number = applied.pageSize,
     ) => {
       const qs = filtersToSearchParams(
         filters,
         pageIndex,
         nearMe,
         radiusKm,
+        pageSize,
       ).toString();
       router.push(qs ? `/beaches?${qs}` : "/beaches");
     },
-    [router],
+    [applied.pageSize, router],
   );
 
   const applyFilters = useCallback(
-    async (filters: BeachFilterState) => {
-      const nearMe = applied.nearMe;
-      if (filterData?.beachPointTypeId == null) {
-        pushFilters(filters, 0, nearMe, applied.radiusKm);
-        return;
-      }
-      if (nearMe && geo.status !== "ready") {
-        pushFilters(filters, 0, nearMe, applied.radiusKm);
-        return;
-      }
-      const params = toSearchParams(
-        filters,
-        0,
-        locale,
-        nearMe,
-        applied.radiusKm,
-        filterData.municipalities,
-      );
-      const coords = nearMe && geo.status === "ready" ? geo.coords : undefined;
-      await queryClient.fetchQuery(
-        beachSearchQueryOptions(
-          params,
-          filterData.beachPointTypeId,
-          coords,
-        ),
-      );
-      pushFilters(filters, 0, nearMe, applied.radiusKm);
+    (filters: BeachFilterState) => {
+      startTransition(() => {
+        const nearMe = locationSortActive;
+        pushFilters(filters, 0, nearMe, applied.radiusKm, applied.pageSize);
+      });
     },
-    [
-      applied.nearMe,
-      applied.radiusKm,
-      filterData,
-      geo.status,
-      locale,
-      pushFilters,
-      queryClient,
-    ],
+    [applied.pageSize, applied.radiusKm, locationSortActive, pushFilters],
   );
 
   const changeSort = useCallback(
     (sort: string) => {
       if (sort === "location") {
-        locationSortDismissedRef.current = false;
-        pushFilters(getDraftFilters(applied), 0, true, applied.radiusKm);
+        if (userCoords != null) {
+          wantsLocationSortRef.current = false;
+          pushFilters(getDraftFilters(applied), 0, true, applied.radiusKm);
+          return;
+        }
+
+        if (isGeoFailed(geo)) {
+          wantsLocationSortRef.current = false;
+          return;
+        }
+
+        wantsLocationSortRef.current = true;
+        if (geo.status !== "loading") {
+          geo.request();
+        }
         return;
       }
 
-      const next = {
-        ...getDraftFilters(applied),
-        sort,
-      };
-      locationSortDismissedRef.current = true;
-      pushFilters(next, 0, false, applied.radiusKm);
+      wantsLocationSortRef.current = false;
+      pushFilters(
+        { ...getDraftFilters(applied), sort, sortDirection: "ASC" },
+        0,
+        false,
+        applied.radiusKm,
+      );
     },
-    [applied, pushFilters],
+    [applied, geo, pushFilters, userCoords],
   );
 
-  const toggleSortDirection = useCallback(() => {
-    const next = {
-      ...getDraftFilters(applied),
-      sortDirection: applied.sortDirection === "ASC" ? "DESC" : "ASC",
-    } satisfies BeachFilterState;
-    locationSortDismissedRef.current = !applied.nearMe;
-    pushFilters(next, 0, applied.nearMe, applied.radiusKm);
-  }, [applied, pushFilters]);
+  const changePage = useCallback(
+    (pageIndex: number) => {
+      pushFilters(
+        getDraftFilters(applied),
+        pageIndex,
+        locationSortActive,
+        applied.radiusKm,
+        applied.pageSize,
+      );
+    },
+    [applied, locationSortActive, pushFilters],
+  );
+
+  const changePageSize = useCallback(
+    (pageSize: BeachPageSize) => {
+      pushFilters(
+        getDraftFilters(applied),
+        0,
+        locationSortActive,
+        applied.radiusKm,
+        pageSize,
+      );
+    },
+    [applied, locationSortActive, pushFilters],
+  );
+
+  const loadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) {
+      return;
+    }
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   useEffect(() => {
-    if (
-      geo.status !== "ready" ||
-      applied.nearMe ||
-      locationSortDismissedRef.current
-    ) {
+    if (geoBootstrappedRef.current) {
+      return;
+    }
+    geoBootstrappedRef.current = true;
+    geo.request();
+  }, [geo.request]);
+
+  useEffect(() => {
+    if (!wantsLocationSortRef.current) {
       return;
     }
 
-    pushFilters(getDraftFilters(applied), 0, true, applied.radiusKm);
-  }, [applied, geo.status, pushFilters]);
-
-  useEffect(() => {
-    if (
-      !applied.nearMe ||
-      (geo.status !== "denied" &&
-        geo.status !== "unsupported" &&
-        geo.status !== "error")
-    ) {
+    if (geo.status === "ready") {
+      wantsLocationSortRef.current = false;
+      if (!applied.nearMe) {
+        pushFilters(getDraftFilters(applied), 0, true, applied.radiusKm);
+      }
       return;
     }
 
-    locationSortDismissedRef.current = true;
-    pushFilters(getDraftFilters(applied), 0, false, applied.radiusKm);
-  }, [applied, geo.status, pushFilters]);
+    if (isGeoFailed(geo)) {
+      wantsLocationSortRef.current = false;
+    }
+  }, [applied, geo.status, geo.permission, pushFilters]);
+
+  useEffect(() => {
+    if (!applied.nearMe || userCoords != null || isGeoPending(geo)) {
+      return;
+    }
+
+    if (isGeoFailed(geo)) {
+      pushFilters(getDraftFilters(applied), 0, false, applied.radiusKm);
+    }
+  }, [applied, geo.status, geo.permission, pushFilters, userCoords]);
+
+  const showResultsLoading =
+    filtersLoading || !filterData || (isPending && beaches.length === 0);
+
+  usePoiWeatherBackgroundSync(beaches, {
+    enabled: filterData != null && beaches.length > 0,
+  });
 
   return (
-    <section className="px-4 py-6 sm:px-8 sm:py-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <section className="px-4 pt-0 pb-6 sm:px-8 sm:py-8">
+      <header className="mb-6 hidden sm:block">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {t("pageTitle")}
         </h1>
-        <p className="w-full text-sm text-muted-foreground sm:w-auto sm:text-right">
-          {page != null
-            ? t("total", { count: page.totalElements })
-            : applied.nearMe && geo.status === "loading"
-              ? t("nearMeLocating")
-              : isFetching
-                ? t("loading")
-                : null}
-        </p>
       </header>
 
-      {filtersLoading || !filterData ? (
-        <div className="mb-4 h-9 animate-pulse rounded-md bg-muted/50" />
+      {!filterData && filtersLoading ? (
+        <BeachLoadingIndicator className="min-h-[20rem]" />
       ) : (
-        <BeachFilterBar
-          value={getDraftFilters(applied)}
-          municipalities={filterData.municipalities}
-          nearMe={applied.nearMe}
-          locationPending={applied.nearMe && geo.status === "loading"}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onApply={(next) => void applyFilters(next)}
-          onReset={() => {
-            locationSortDismissedRef.current = true;
-            pushFilters(EMPTY_BEACH_FILTERS, 0, false, applied.radiusKm);
-          }}
-          onSortChange={changeSort}
-          onDirectionToggle={toggleSortDirection}
-        />
-      )}
+        <>
+          <BeachFilterBar
+            value={committedFilters}
+            municipalities={filterData!.municipalities}
+            locationSortActive={locationSortActive}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onApply={applyFilters}
+            onSortChange={changeSort}
+          />
 
-      <div className="min-h-[12rem]">
-        {isPending || (applied.nearMe && geo.status === "loading") ? (
-          <p className="py-16 text-center text-sm text-muted-foreground">{t("loading")}</p>
-        ) : isError ? (
-          <p className="py-16 text-center text-sm text-destructive">{t("error")}</p>
-        ) : page?.empty ? (
-          <p className="rounded-lg border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
-            {applied.nearMe ? t("emptyNearMe") : t("empty")}
-          </p>
-        ) : viewMode === "list" ? (
-            <BeachResultsTable
-              beaches={page?.content ?? []}
-              distancesKm={distancesKm}
-              userCoords={userCoords}
-              filterState={getDraftFilters(applied)}
-              onFilterPatch={(next) => void applyFilters(next)}
-            />
-        ) : (
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {page?.content.map((beach) => (
-              <li key={beach.id} className="aspect-square">
-                <BeachCard
-                  beach={beach}
-                  distanceKm={resolveBeachDistanceKm(
-                    beach,
-                    distancesKm,
-                    userCoords,
-                  )}
-                  filterState={getDraftFilters(applied)}
-                  onFilterPatch={(next) => void applyFilters(next)}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {page != null && page.totalPages > 1 && (
-        <nav
-          className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6"
-          aria-label="Pagination"
-        >
-          <p className="text-sm text-muted-foreground">
-            {t("page", {
-              current: page.number + 1,
-              total: page.totalPages,
-            })}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-9 rounded-md"
-              disabled={page.first}
-              onClick={() => {
-                pushFilters(
-                  getDraftFilters(applied),
-                  applied.page - 1,
-                  applied.nearMe,
-                  applied.radiusKm,
-                );
-              }}
-            >
-              {t("prev")}
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              className="h-9 rounded-md"
-              disabled={page.last}
-              onClick={() => {
-                pushFilters(
-                  getDraftFilters(applied),
-                  applied.page + 1,
-                  applied.nearMe,
-                  applied.radiusKm,
-                );
-              }}
-            >
-              {t("next")}
-            </Button>
+          <div className="min-h-[12rem]">
+            {showResultsLoading ? (
+              <BeachLoadingIndicator className="min-h-[20rem]" />
+            ) : isError ? (
+              <p className="py-16 text-center text-sm text-destructive">
+                {t("error")}
+              </p>
+            ) : isEmpty ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("empty")}
+              </p>
+            ) : viewMode === "list" ? (
+              <BeachResultsTable
+                beaches={beaches}
+                distancesKm={distancesKm}
+                userCoords={userCoords}
+                filterState={committedFilters}
+                onFilterPatch={applyFilters}
+              />
+            ) : (
+              <ul className="grid grid-cols-2 gap-2 pt-3 sm:grid-cols-3 sm:pt-0 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {beaches.map((beach) => (
+                  <li key={beach.id} className="h-full sm:aspect-square">
+                    <BeachCard
+                      beach={beach}
+                      distanceKm={resolveBeachDistanceKm(
+                        beach,
+                        distancesKm,
+                        userCoords,
+                      )}
+                      filterState={committedFilters}
+                      onFilterPatch={applyFilters}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </nav>
+
+          {isMobile && hasNextPage ? (
+            <>
+              <BeachLoadMoreSentinel
+                onVisible={loadMore}
+                disabled={isFetchingNextPage}
+              />
+              {isFetchingNextPage ? (
+                <BeachLoadingIndicator className="min-h-0 py-6 sm:hidden" />
+              ) : null}
+            </>
+          ) : null}
+
+          {!isMobile && page != null ? (
+            <BeachPaginationBar
+              currentPage={page.number}
+              totalPages={Math.max(1, totalPages)}
+              pageSize={applied.pageSize}
+              onPageChange={changePage}
+              onPageSizeChange={changePageSize}
+            />
+          ) : null}
+        </>
       )}
     </section>
   );

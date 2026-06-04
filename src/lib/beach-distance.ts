@@ -29,6 +29,24 @@ export function getDistancesKmFromPage(
   return undefined;
 }
 
+export function mergeDistancesKmFromPages(
+  pages: unknown[],
+): Map<number, number> | undefined {
+  const merged = new Map<number, number>();
+
+  for (const page of pages) {
+    const distances = getDistancesKmFromPage(page);
+    if (distances == null) {
+      continue;
+    }
+    for (const [id, km] of distances) {
+      merged.set(id, km);
+    }
+  }
+
+  return merged.size > 0 ? merged : undefined;
+}
+
 export function resolveBeachDistanceKm(
   beach: PoiDto,
   distancesKm: Map<number, number> | undefined,

@@ -22,6 +22,7 @@ import type { PoiDto } from "@/lib/types/poi";
 export type BeachNearMeSearchOptions = {
   locale: string;
   page: number;
+  pageSize?: number;
   sortDirection: "ASC" | "DESC";
   radiusKm?: number;
   beachPointTypeId: number;
@@ -90,12 +91,13 @@ export async function searchBeachesNearMeTemp(
       options.sortDirection === "DESC" ? b.km - a.km : a.km - b.km,
     );
 
+  const pageSize = options.pageSize ?? BEACH_PAGE_SIZE;
   const totalElements = ranked.length;
-  const totalPages = Math.max(1, Math.ceil(totalElements / BEACH_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
   const pageIndex = Math.min(Math.max(0, options.page), totalPages - 1);
   const slice = ranked.slice(
-    pageIndex * BEACH_PAGE_SIZE,
-    pageIndex * BEACH_PAGE_SIZE + BEACH_PAGE_SIZE,
+    pageIndex * pageSize,
+    pageIndex * pageSize + pageSize,
   );
 
   const distancesKm = new Map<number, number>();
@@ -107,7 +109,7 @@ export async function searchBeachesNearMeTemp(
     content: slice.map((row) => row.poi),
     totalElements,
     totalPages,
-    size: BEACH_PAGE_SIZE,
+    size: pageSize,
     number: pageIndex,
     first: pageIndex === 0,
     last: pageIndex >= totalPages - 1,

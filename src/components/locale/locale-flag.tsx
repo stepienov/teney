@@ -20,7 +20,7 @@ export function LocaleFlag({ locale, className }: LocaleFlagProps) {
   return (
     <span
       className={cn(
-        "inline-flex h-4 w-6 shrink-0 overflow-hidden rounded-sm ring-1 ring-border/60",
+        "inline-flex h-4 w-6 shrink-0 overflow-hidden rounded-[2px]",
         className,
       )}
       aria-hidden
