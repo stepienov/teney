@@ -1,4 +1,4 @@
-import { apiJson, apiPost } from "@/lib/api-client";
+import { apiPost } from "@/lib/api-client";
 import type { PoiDto, PoiSearchRequest, SpringPage } from "@/lib/types/poi";
 
 export const BEACH_PAGE_SIZE = 10;
@@ -17,22 +17,6 @@ export async function searchPois(
   delete body.includeBeachWeather;
 
   return apiPost<SpringPage<PoiDto>>(path, body);
-}
-
-type BeachNameSuggestionItem = {
-  name: string | null;
-};
-
-export async function fetchBeachNameSuggestions(): Promise<string[]> {
-  const beaches = await apiJson<BeachNameSuggestionItem[]>("/api/beaches");
-
-  return Array.from(
-    new Set(
-      beaches
-        .map((beach) => beach.name?.trim())
-        .filter((name): name is string => Boolean(name)),
-    ),
-  ).sort((a, b) => a.localeCompare(b));
 }
 
 export type BeachSearchBuildOptions = {

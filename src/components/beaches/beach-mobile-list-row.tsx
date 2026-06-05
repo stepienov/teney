@@ -3,6 +3,7 @@ import { Waves } from "lucide-react";
 
 import { BeachDistanceBadge } from "@/components/beaches/beach-attribute-badges";
 import { Link } from "@/i18n/routing";
+import { beachPath } from "@/lib/beach-slug";
 import type { PoiDto } from "@/lib/types/poi";
 
 type BeachMobileListRowProps = {
@@ -19,7 +20,7 @@ export function BeachMobileListRow({
   return (
     <li>
       <Link
-        href={`/beaches/${beach.id}`}
+        href={beachPath(beach)}
         className="flex items-center gap-3 py-3.5 transition-opacity active:opacity-80"
       >
         <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">

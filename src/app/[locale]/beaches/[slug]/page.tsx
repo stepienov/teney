@@ -6,14 +6,15 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { BeachForecastPanel } from "@/components/beaches/beach-forecast-panel";
 import { fetchBeachForecastWeather } from "@/lib/api/beach-forecast";
-import { fetchBeachById } from "@/lib/api/beach-search";
-import { Link } from "@/i18n/routing";
+import { fetchBeachBySlug } from "@/lib/api/beach-search";
+import { Link, redirect } from "@/i18n/routing";
+import { beachPath, isCanonicalBeachSlugParam } from "@/lib/beach-slug";
 import { buildMapsUrl } from "@/lib/geo/maps-url";
 import { formatRegionDisplayName } from "@/lib/region-display-name";
 import type { Address, PoiDto } from "@/lib/types/poi";
 
 type Props = {
-  params: Promise<{ locale: string; id: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 };
 
 function formatAddress(address: Address | null): string | null {
@@ -85,23 +86,20 @@ function FeatureTag({
 }
 
 export default async function BeachDetailsPage({ params }: Props) {
-  const { locale, id } = await params;
+  const { locale, slug } = await params;
   setRequestLocale(locale);
 
-  const beachId = Number(id);
-  if (!Number.isInteger(beachId) || beachId <= 0) {
-    notFound();
-  }
-
-  const t = await getTranslations({ locale, namespace: "beaches" });
-  const [beach, forecast] = await Promise.all([
-    fetchBeachById({ id: beachId, locale }),
-    fetchBeachForecastWeather(beachId),
-  ]);
-
+  const beach = await fetchBeachBySlug(slug, locale);
   if (beach == null) {
     notFound();
   }
+
+  if (!isCanonicalBeachSlugParam(beach, slug)) {
+    redirect({ href: beachPath(beach), locale });
+  }
+
+  const t = await getTranslations({ locale, namespace: "beaches" });
+  const forecast = await fetchBeachForecastWeather(beach.id);
 
   const address = formatAddress(beach.address);
   const price = beach.isFree === false ? formatPrice(beach, locale) : null;
@@ -121,7 +119,11 @@ export default async function BeachDetailsPage({ params }: Props) {
   ].filter(Boolean) as string[];
   const locationLabel =
     locationParts.length > 0 ? locationParts.join(" · ") : null;
-  const mapsUrl = buildMapsUrl(beach.coordinates);
+  const mapsUrl = buildMapsUrl(
+    beach.coordinates,
+    beach.googlePlaceId,
+    beach.name,
+  );
   const beachFeatureTags = [
     beach.beachDetails?.beachSurface != null && surface
       ? { key: "surface", label: surface }

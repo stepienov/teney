@@ -1,7 +1,6 @@
 import { infiniteQueryOptions, keepPreviousData, queryOptions } from "@tanstack/react-query";
 
 import { searchBeaches } from "@/lib/api/beach-search";
-import { fetchBeachNameSuggestions } from "@/lib/api/poi-search";
 import { fetchMunicipalities } from "@/lib/api/reference";
 import {
   DEFAULT_BEACH_PAGE_SIZE,
@@ -69,11 +68,8 @@ export function beachFiltersQueryOptions() {
   return queryOptions({
     queryKey: beachFiltersQueryKey,
     queryFn: async () => {
-      const [municipalities, beachNames] = await Promise.all([
-        fetchMunicipalities(),
-        fetchBeachNameSuggestions(),
-      ]);
-      return { municipalities, beachNames };
+      const municipalities = await fetchMunicipalities();
+      return { municipalities };
     },
     staleTime: 5 * 60_000,
   });

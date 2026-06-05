@@ -1,5 +1,10 @@
-import { apiPost } from "@/lib/api-client";
+import { ApiError, apiJson, apiPost } from "@/lib/api-client";
 import type { UserCoords } from "@/hooks/use-geolocation";
+import {
+  beachMatchesNameOnlySlug,
+  parseBeachIdFromSlugParam,
+  unslugifyBeachName,
+} from "@/lib/beach-slug";
 import type {
   BeachDisplayWeather,
   BeachListItemDto,
@@ -71,6 +76,7 @@ export function beachListItemToPoiDto(item: BeachListItemDto): PoiDto {
     ticketPriceResident: null,
     currencyCode: null,
     photoUrl: item.photoUrl,
+    googlePlaceId: item.googlePlaceId,
     openingHours: null,
     visitorLimit: null,
     address: null,
@@ -183,6 +189,57 @@ function mapBeachSearchPage(
     content,
     distancesKm,
   };
+}
+
+/** GET /api/beaches/{id} — single beach detail. */
+export async function fetchBeachById(options: {
+  id: number;
+  locale: string;
+  weatherDate?: string;
+}): Promise<PoiDto | null> {
+  const params = new URLSearchParams({
+    locale: options.locale,
+    weatherDate: options.weatherDate ?? defaultBeachWeatherDate(),
+  });
+
+  try {
+    const item = await apiJson<BeachListItemDto>(
+      `/api/beaches/${options.id}?${params.toString()}`,
+    );
+    return beachListItemToPoiDto(item);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/** Resolve a beach from `/beaches/{slug}` (name slug or legacy numeric id). */
+export async function fetchBeachBySlug(
+  slug: string,
+  locale: string,
+  weatherDate?: string,
+): Promise<PoiDto | null> {
+  const id = parseBeachIdFromSlugParam(slug);
+  if (id != null) {
+    return fetchBeachById({ id, locale, weatherDate });
+  }
+
+  const page = await searchBeaches({
+    locale,
+    page: 0,
+    size: 100,
+    sort: "name",
+    sortDirection: "ASC",
+    name: unslugifyBeachName(slug),
+    weatherDate,
+  });
+
+  const matches = page.content.filter((beach) =>
+    beachMatchesNameOnlySlug(beach, slug),
+  );
+  return matches[0] ?? null;
 }
 
 /** POST /api/beaches/search — beach list (grid, table, map). */

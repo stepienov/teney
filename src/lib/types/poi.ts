@@ -96,6 +96,7 @@ export type PoiDto = {
   attributes?: BeachAttributes | null;
   /** Daily display weather from beach list search (`beach_display_weather`). */
   displayWeather?: BeachDisplayWeather | null;
+  googlePlaceId?: string | null;
 };
 
 export type SpringPage<T> = {

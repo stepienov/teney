@@ -3,6 +3,7 @@ import { ChevronRight, MapPin, Navigation, Umbrella } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/routing";
+import { beachPath } from "@/lib/beach-slug";
 import { formatDistanceKm } from "@/lib/geo/distance";
 import type { PoiDto } from "@/lib/types/poi";
 
@@ -17,7 +18,7 @@ export function BeachListRow({ beach, distanceKm }: BeachListRowProps) {
   return (
     <li>
       <Link
-        href={`/beaches/${beach.id}`}
+        href={beachPath(beach)}
         className="group flex items-center gap-4 rounded-lg border border-border bg-white px-3 py-3 transition-colors hover:border-zinc-300 hover:bg-zinc-50/80"
       >
         <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-zinc-100">

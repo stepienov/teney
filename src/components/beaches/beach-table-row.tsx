@@ -5,6 +5,7 @@ import { BeachListWeatherCell } from "@/components/beaches/beach-list-weather-ce
 import { BeachAttributeBadges } from "@/components/beaches/beach-attribute-badges";
 import type { BeachFilterState } from "@/components/beaches/beach-filter-state";
 import { Link } from "@/i18n/routing";
+import { beachPath } from "@/lib/beach-slug";
 import { formatRegionDisplayName } from "@/lib/region-display-name";
 import type { PoiDto } from "@/lib/types/poi";
 
@@ -25,7 +26,7 @@ export function BeachTableRow({
     <tr className="group border-b border-border last:border-b-0 hover:bg-muted/60">
       <td className="px-4 py-2.5">
         <Link
-          href={`/beaches/${beach.id}`}
+          href={beachPath(beach)}
           className="flex min-w-0 items-center gap-2.5"
         >
           <span className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted">

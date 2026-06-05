@@ -5,6 +5,7 @@ import { BeachCardDesktopName } from "@/components/beaches/beach-card-desktop-na
 import { BeachCardWeatherPanel } from "@/components/beaches/beach-card-weather-panel";
 import { BeachDistanceBadge } from "@/components/beaches/beach-attribute-badges";
 import { Link } from "@/i18n/routing";
+import { beachPath } from "@/lib/beach-slug";
 import type { PoiDto } from "@/lib/types/poi";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +13,6 @@ type BeachCardProps = {
   beach: PoiDto;
   distanceKm?: number;
 };
-
-const beachHref = (id: number) => `/beaches/${id}`;
 
 const clickableLinkClass =
   "rounded-sm outline-none transition-[color,box-shadow,background-color] focus-visible:ring-2 focus-visible:ring-ring";
@@ -23,7 +22,7 @@ const DESKTOP_FOOTER_CLASS =
   "box-border flex h-[60px] shrink-0 items-center overflow-hidden border-t border-border bg-white px-2 py-1.5";
 
 export function BeachCard({ beach, distanceKm }: BeachCardProps) {
-  const href = beachHref(beach.id);
+  const href = beachPath(beach);
 
   return (
     <>

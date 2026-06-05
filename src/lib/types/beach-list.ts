@@ -18,6 +18,7 @@ export type BeachListItemDto = {
   id: number;
   name: string;
   photoUrl: string | null;
+  googlePlaceId: string | null;
   coordinates: Coordinates | null;
   municipalityId: number | null;
   municipalityName: string | null;
