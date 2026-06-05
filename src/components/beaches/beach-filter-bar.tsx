@@ -6,6 +6,7 @@ import { useMemo } from "react";
 
 import { BeachFilterMobile } from "@/components/beaches/beach-filter-mobile";
 import { BeachFilterPanel } from "@/components/beaches/beach-filter-panel";
+import { BeachWeatherFilterChips } from "@/components/beaches/beach-weather-filter-chips";
 import {
   clearBeachFilters,
   hasBeachFilters,
@@ -51,8 +52,10 @@ export function BeachFilterBar({
   }
 
   const sortOptions = [
-    { value: "name", label: t("sortName") },
+    { value: "weather.tempMax", label: t("sortWarmest") },
+    { value: "weather.windSpeed", label: t("sortLightestWind") },
     { value: "location", label: t("sortNearest") },
+    { value: "name", label: t("sortName") },
   ] as const;
 
   return (
@@ -67,8 +70,8 @@ export function BeachFilterBar({
         onSortChange={onSortChange}
       />
 
-      <div className="mb-4 hidden flex-wrap items-center gap-2 sm:flex">
-        <label className="relative min-w-[12rem] flex-1 sm:max-w-xs">
+      <div className="mb-4 hidden items-center gap-2 sm:flex">
+        <label className="relative w-80 shrink-0">
           <span className="sr-only">{t("searchName")}</span>
           <Search
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -141,6 +144,10 @@ export function BeachFilterBar({
             <LayoutGrid className="size-4" aria-hidden />
           </Button>
         </div>
+      </div>
+
+      <div className="mb-4 hidden sm:block">
+        <BeachWeatherFilterChips value={value} onApply={onApply} />
       </div>
     </>
   );

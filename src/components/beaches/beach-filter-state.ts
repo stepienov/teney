@@ -6,11 +6,16 @@ export const BEACH_SURFACE_OPTIONS = [
 
 export type BeachSurfaceOption = (typeof BEACH_SURFACE_OPTIONS)[number];
 
+export const DEFAULT_BEACH_SORT = "weather.tempMax";
+
 export type BeachFilterState = {
   name: string;
   regionIds: string[];
   sort: string;
   sortDirection: "ASC" | "DESC";
+  dryToday: boolean;
+  lightWind: boolean;
+  clearSky: boolean;
   hasLifeguard: boolean;
   hasShower: boolean;
   beachSurfaces: string[];
@@ -24,8 +29,11 @@ export type BeachFilterState = {
 export const EMPTY_BEACH_FILTERS: BeachFilterState = {
   name: "",
   regionIds: [],
-  sort: "name",
+  sort: DEFAULT_BEACH_SORT,
   sortDirection: "ASC",
+  dryToday: false,
+  lightWind: false,
+  clearSky: false,
   hasLifeguard: false,
   hasShower: false,
   beachSurfaces: [],
@@ -75,8 +83,16 @@ export function clearRegionFilters(value: BeachFilterState): BeachFilterState {
   return { ...value, regionIds: [] };
 }
 
+export function hasWeatherFilters(value: BeachFilterState): boolean {
+  return value.dryToday || value.lightWind || value.clearSky;
+}
+
+export function clearWeatherFilters(value: BeachFilterState): BeachFilterState {
+  return { ...value, dryToday: false, lightWind: false, clearSky: false };
+}
+
 export function clearBeachFilters(value: BeachFilterState): BeachFilterState {
-  return clearRegionFilters(clearAttributeFilters(value));
+  return clearRegionFilters(clearAttributeFilters(clearWeatherFilters(value)));
 }
 
 export function hasGeoFilters(value: BeachFilterState): boolean {
@@ -84,7 +100,9 @@ export function hasGeoFilters(value: BeachFilterState): boolean {
 }
 
 export function hasBeachFilters(value: BeachFilterState): boolean {
-  return hasAttributeFilters(value) || hasGeoFilters(value);
+  return (
+    hasAttributeFilters(value) || hasGeoFilters(value) || hasWeatherFilters(value)
+  );
 }
 
 export function hasActiveFilters(value: BeachFilterState): boolean {

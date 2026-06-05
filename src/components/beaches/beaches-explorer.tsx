@@ -12,7 +12,10 @@ import {
 import { useSearchParams } from "next/navigation";
 
 import { BeachFilterBar } from "@/components/beaches/beach-filter-bar";
-import { type BeachFilterState } from "@/components/beaches/beach-filter-state";
+import {
+  DEFAULT_BEACH_SORT,
+  type BeachFilterState,
+} from "@/components/beaches/beach-filter-state";
 import { BeachCard } from "@/components/beaches/beach-card";
 import { BeachLoadMoreSentinel } from "@/components/beaches/beach-load-more-sentinel";
 import { BeachLoadingIndicator } from "@/components/beaches/beach-loading-indicator";
@@ -20,10 +23,8 @@ import { BeachPaginationBar } from "@/components/beaches/beach-pagination-bar";
 import { BeachResultsTable } from "@/components/beaches/beach-results-table";
 import { useGeolocation, type GeolocationHandle } from "@/hooks/use-geolocation";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { usePoiWeatherBackgroundSync } from "@/hooks/use-poi-weather-polling";
 import { useLocalStorageChoice } from "@/hooks/use-local-storage-flag";
 import { useRouter } from "@/i18n/routing";
-import { resolveGeoFilterNames } from "@/lib/beach-geo-filter";
 import { DEFAULT_NEAR_ME_RADIUS_KM } from "@/lib/api/poi-search";
 import {
   getDistancesKmFromPage,
@@ -94,9 +95,12 @@ function parseRadiusKm(value: string | null): number {
 }
 
 function normalizeSortParam(sort: string | null): string {
-  const value = sort ?? "name";
+  const value = sort ?? DEFAULT_BEACH_SORT;
   if (value === "municipality.name" || value === "region.name") {
     return "name";
+  }
+  if (value === "windSpeed" || value === "wind") {
+    return "weather.windSpeed";
   }
   return value;
 }
@@ -117,6 +121,9 @@ function parseFiltersFromParams(params: URLSearchParams): AppliedBeachFilters {
     hasRestaurantNearby: params.get("restaurant") === "1",
     dogFriendly: params.get("dogs") === "1",
     hasWebcam: params.get("webcam") === "1",
+    dryToday: params.get("dry") === "1",
+    lightWind: params.get("lwind") === "1",
+    clearSky: params.get("csky") === "1",
     page: Math.max(0, Number(params.get("page") ?? "0") || 0),
     pageSize: parseBeachPageSize(params.get("size")),
     nearMe: params.get("near") === "1",
@@ -138,6 +145,9 @@ function getDraftFilters(applied: AppliedBeachFilters): BeachFilterState {
     hasRestaurantNearby: applied.hasRestaurantNearby,
     dogFriendly: applied.dogFriendly,
     hasWebcam: applied.hasWebcam,
+    dryToday: applied.dryToday,
+    lightWind: applied.lightWind,
+    clearSky: applied.clearSky,
   };
 }
 
@@ -151,7 +161,7 @@ function filtersToSearchParams(
   const p = new URLSearchParams();
   if (filters.name.trim()) p.set("q", filters.name.trim());
   if (filters.regionIds.length) p.set("regions", filters.regionIds.join(","));
-  if (filters.sort !== "name") p.set("sort", filters.sort);
+  if (filters.sort !== DEFAULT_BEACH_SORT) p.set("sort", filters.sort);
   if (filters.hasLifeguard) p.set("lifeguard", "1");
   if (filters.hasShower) p.set("shower", "1");
   if (filters.beachSurfaces.length) {
@@ -162,6 +172,9 @@ function filtersToSearchParams(
   if (filters.hasRestaurantNearby) p.set("restaurant", "1");
   if (filters.dogFriendly) p.set("dogs", "1");
   if (filters.hasWebcam) p.set("webcam", "1");
+  if (filters.dryToday) p.set("dry", "1");
+  if (filters.lightWind) p.set("lwind", "1");
+  if (filters.clearSky) p.set("csky", "1");
   if (page > 0) p.set("page", String(page));
   if (pageSize !== DEFAULT_BEACH_PAGE_SIZE) p.set("size", String(pageSize));
   if (nearMe) {
@@ -178,19 +191,7 @@ function toSearchBaseParams(
   locale: string,
   nearMe: boolean,
   radiusKm: number,
-  municipalities: {
-    id: number;
-    name: string;
-    regionDirectionId: number;
-    regionDirectionName: string;
-  }[],
 ): BeachSearchBaseParams {
-  const { regionNames } = resolveGeoFilterNames(
-    municipalities,
-    filters.regionIds,
-    [],
-  );
-
   return {
     locale,
     sort: filters.sort,
@@ -198,8 +199,7 @@ function toSearchBaseParams(
     nearMe,
     radiusKm,
     name: filters.name.trim() || undefined,
-    regionIds: filters.regionIds,
-    regionNames,
+    regionIds: filters.regionIds.length > 0 ? filters.regionIds : undefined,
     hasLifeguard: filters.hasLifeguard || undefined,
     hasShower: filters.hasShower || undefined,
     beachSurfaces:
@@ -209,6 +209,9 @@ function toSearchBaseParams(
     hasRestaurantNearby: filters.hasRestaurantNearby || undefined,
     dogFriendly: filters.dogFriendly || undefined,
     hasWebcam: filters.hasWebcam || undefined,
+    dryToday: filters.dryToday || undefined,
+    lightWind: filters.lightWind || undefined,
+    clearSky: filters.clearSky || undefined,
   };
 }
 
@@ -262,9 +265,8 @@ function BeachesExplorerContent({
         locale,
         locationSortActive,
         applied.radiusKm,
-        municipalities,
       ),
-    [applied, locale, locationSortActive, municipalities],
+    [applied, locale, locationSortActive],
   );
 
   const desktopSearchParams = useMemo<BeachSearchParams>(
@@ -281,11 +283,7 @@ function BeachesExplorerContent({
     isPending: desktopPending,
     isError: desktopError,
   } = useQuery({
-    ...beachSearchQueryOptions(
-      desktopSearchParams,
-      filterData?.beachPointTypeId,
-      userCoords,
-    ),
+    ...beachSearchQueryOptions(desktopSearchParams, userCoords),
     enabled: !isMobile,
   });
 
@@ -297,11 +295,7 @@ function BeachesExplorerContent({
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    ...beachSearchInfiniteQueryOptions(
-      baseSearchParams,
-      filterData?.beachPointTypeId,
-      userCoords,
-    ),
+    ...beachSearchInfiniteQueryOptions(baseSearchParams, userCoords),
     enabled: isMobile,
   });
 
@@ -376,7 +370,11 @@ function BeachesExplorerContent({
 
       wantsLocationSortRef.current = false;
       pushFilters(
-        { ...getDraftFilters(applied), sort, sortDirection: "ASC" },
+        {
+          ...getDraftFilters(applied),
+          sort,
+          sortDirection: sort === "weather.tempMax" ? "DESC" : "ASC",
+        },
         0,
         false,
         applied.radiusKm,
@@ -457,10 +455,6 @@ function BeachesExplorerContent({
   const showResultsLoading =
     filtersLoading || !filterData || (isPending && beaches.length === 0);
 
-  usePoiWeatherBackgroundSync(beaches, {
-    enabled: filterData != null && beaches.length > 0,
-  });
-
   return (
     <section className="px-4 pt-0 pb-6 sm:px-8 sm:py-8">
       <header className="mb-6 hidden sm:block">
@@ -505,7 +499,7 @@ function BeachesExplorerContent({
             ) : (
               <ul className="grid grid-cols-2 gap-2 pt-3 sm:grid-cols-3 sm:pt-0 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {beaches.map((beach) => (
-                  <li key={beach.id} className="h-full sm:aspect-square">
+                  <li key={beach.id} className="relative min-w-0">
                     <BeachCard
                       beach={beach}
                       distanceKm={resolveBeachDistanceKm(
@@ -513,8 +507,6 @@ function BeachesExplorerContent({
                         distancesKm,
                         userCoords,
                       )}
-                      filterState={committedFilters}
-                      onFilterPatch={applyFilters}
                     />
                   </li>
                 ))}

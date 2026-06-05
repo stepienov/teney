@@ -38,16 +38,19 @@ export function BeachResultsTable({
       </ul>
 
       <div className="hidden overflow-x-auto rounded-lg border border-border sm:block">
-        <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[640px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/80">
-              <th className="w-[32%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <th className="w-[19%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("colName")}
               </th>
-              <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <th className="hidden w-[22%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:table-cell">
+                {t("colWeather")}
+              </th>
+              <th className="w-[40%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("colAttributes")}
               </th>
-              <th className="w-[18%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <th className="w-[16%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("colRegion")}
               </th>
             </tr>

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Waves } from "lucide-react";
 
+import { BeachListWeatherCell } from "@/components/beaches/beach-list-weather-cell";
 import { BeachAttributeBadges } from "@/components/beaches/beach-attribute-badges";
 import type { BeachFilterState } from "@/components/beaches/beach-filter-state";
 import { Link } from "@/i18n/routing";
@@ -45,6 +46,9 @@ export function BeachTableRow({
             {beach.name}
           </span>
         </Link>
+      </td>
+      <td className="hidden px-4 py-2.5 md:table-cell">
+        <BeachListWeatherCell weather={beach.displayWeather} />
       </td>
       <td className="px-4 py-2.5">
         <BeachAttributeBadges

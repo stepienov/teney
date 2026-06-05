@@ -1,3 +1,5 @@
+import type { BeachDisplayWeather } from "@/lib/types/beach-list";
+
 export type Coordinates = {
   latitude: number;
   longitude: number;
@@ -92,6 +94,8 @@ export type PoiDto = {
   beachWeather: BeachWeather | null;
   beachWeatherStatus?: WeatherReadinessStatus | null;
   attributes?: BeachAttributes | null;
+  /** Daily display weather from beach list search (`beach_display_weather`). */
+  displayWeather?: BeachDisplayWeather | null;
 };
 
 export type SpringPage<T> = {

@@ -17,8 +17,13 @@ import {
 import type { PoiDto } from "@/lib/types/poi";
 import { cn } from "@/lib/utils";
 
-function isTruthyAttribute(value: unknown): boolean {
-  return value === true || value === "true" || value === 1 || value === "1";
+/** Badge only when BE sent an explicit boolean true (not null / missing). */
+function isExplicitBooleanTrue(value: unknown): value is true {
+  return value === true;
+}
+
+function badgeDisplayLabel(text: string): string {
+  return text.toLocaleLowerCase();
 }
 
 type BooleanFilterKey =
@@ -30,10 +35,128 @@ type BooleanFilterKey =
   | "dogFriendly"
   | "hasWebcam";
 
-type BeachBadgeItem =
+export type BeachBadgeItem =
   | { kind: "static"; label: string; variant: "default" | "paid" }
   | { kind: "toggle"; label: string; variant: "default" | "paid"; key: BooleanFilterKey }
   | { kind: "surface"; label: string; surface: BeachSurfaceOption };
+
+type BeachBadgeLabels = {
+  paid: string;
+  surfaceLightSand: string;
+  surfaceVolcanicSand: string;
+  surfaceStones: string;
+  tagLifeguard: string;
+  tagShower: string;
+  tagBoatOnly: string;
+  tagSunbeds: string;
+  tagShopNearby: string;
+  tagRestaurantNearby: string;
+  tagDogFriendly: string;
+  filterWebcam: string;
+};
+
+export function buildBeachBadgeItems(
+  beach: PoiDto,
+  labels: BeachBadgeLabels,
+): BeachBadgeItem[] {
+  const surface = beach.beachDetails?.beachSurface;
+  const surfaceText = surfaceLabel(surface, {
+    lightSand: labels.surfaceLightSand,
+    volcanicSand: labels.surfaceVolcanicSand,
+    stones: labels.surfaceStones,
+  });
+
+  const items: BeachBadgeItem[] = [];
+
+  if (beach.isFree === false) {
+    items.push({
+      kind: "static",
+      label: badgeDisplayLabel(labels.paid),
+      variant: "paid",
+    });
+  }
+  if (surface != null && surfaceText && isBeachSurface(surface)) {
+    items.push({
+      kind: "surface",
+      label: badgeDisplayLabel(surfaceText),
+      surface,
+    });
+  } else if (surface != null && surfaceText) {
+    items.push({
+      kind: "static",
+      label: badgeDisplayLabel(surfaceText),
+      variant: "default",
+    });
+  }
+  if (beach.beachDetails?.hasLifeguard === true) {
+    items.push({
+      kind: "toggle",
+      label: badgeDisplayLabel(labels.tagLifeguard),
+      variant: "default",
+      key: "hasLifeguard",
+    });
+  }
+  if (beach.beachDetails?.hasShower === true) {
+    items.push({
+      kind: "toggle",
+      label: badgeDisplayLabel(labels.tagShower),
+      variant: "default",
+      key: "hasShower",
+    });
+  }
+  if (beach.beachDetails?.boatAccessOnly === true) {
+    items.push({
+      kind: "static",
+      label: badgeDisplayLabel(labels.tagBoatOnly),
+      variant: "default",
+    });
+  }
+  if (isExplicitBooleanTrue(beach.attributes?.sunbeds_boolean)) {
+    items.push({
+      kind: "toggle",
+      label: badgeDisplayLabel(labels.tagSunbeds),
+      variant: "default",
+      key: "hasSunbeds",
+    });
+  }
+  if (isExplicitBooleanTrue(beach.attributes?.shop_nearby_boolean)) {
+    items.push({
+      kind: "toggle",
+      label: badgeDisplayLabel(labels.tagShopNearby),
+      variant: "default",
+      key: "hasShopNearby",
+    });
+  }
+  if (isExplicitBooleanTrue(beach.attributes?.restaurant_nearby_boolean)) {
+    items.push({
+      kind: "toggle",
+      label: badgeDisplayLabel(labels.tagRestaurantNearby),
+      variant: "default",
+      key: "hasRestaurantNearby",
+    });
+  }
+  if (isExplicitBooleanTrue(beach.attributes?.dog_friendly_boolean)) {
+    items.push({
+      kind: "toggle",
+      label: badgeDisplayLabel(labels.tagDogFriendly),
+      variant: "default",
+      key: "dogFriendly",
+    });
+  }
+  if (
+    typeof beach.attributes?.webcam_link === "string" &&
+    beach.attributes.webcam_link
+  ) {
+    items.push({
+      kind: "toggle",
+      label: badgeDisplayLabel(labels.filterWebcam),
+      variant: "default",
+      key: "hasWebcam",
+    });
+  }
+
+  return items;
+}
 
 function surfaceLabel(
   surface: string | null | undefined,
@@ -140,65 +263,20 @@ export function BeachAttributeBadges({
 }: BeachAttributeBadgesProps) {
   const t = useTranslations("beaches");
 
-  const surface = beach.beachDetails?.beachSurface;
-  const surfaceText = surfaceLabel(surface, {
-    lightSand: t("surfaceLightSand"),
-    volcanicSand: t("surfaceVolcanicSand"),
-    stones: t("surfaceStones"),
+  const items = buildBeachBadgeItems(beach, {
+    paid: t("paid"),
+    surfaceLightSand: t("surfaceLightSand"),
+    surfaceVolcanicSand: t("surfaceVolcanicSand"),
+    surfaceStones: t("surfaceStones"),
+    tagLifeguard: t("tagLifeguard"),
+    tagShower: t("tagShower"),
+    tagBoatOnly: t("tagBoatOnly"),
+    tagSunbeds: t("tagSunbeds"),
+    tagShopNearby: t("tagShopNearby"),
+    tagRestaurantNearby: t("tagRestaurantNearby"),
+    tagDogFriendly: t("tagDogFriendly"),
+    filterWebcam: t("filterWebcam"),
   });
-
-  const items: BeachBadgeItem[] = [];
-
-  if (!beach.isFree) {
-    items.push({ kind: "static", label: t("paid"), variant: "paid" });
-  }
-  if (surfaceText && isBeachSurface(surface)) {
-    items.push({ kind: "surface", label: surfaceText, surface });
-  } else if (surfaceText) {
-    items.push({ kind: "static", label: surfaceText, variant: "default" });
-  }
-  if (beach.beachDetails?.hasLifeguard) {
-    items.push({ kind: "toggle", label: t("tagLifeguard"), variant: "default", key: "hasLifeguard" });
-  }
-  if (beach.beachDetails?.hasShower) {
-    items.push({ kind: "toggle", label: t("tagShower"), variant: "default", key: "hasShower" });
-  }
-  if (beach.beachDetails?.boatAccessOnly) {
-    items.push({ kind: "static", label: t("tagBoatOnly"), variant: "default" });
-  }
-  if (isTruthyAttribute(beach.attributes?.sunbeds_boolean)) {
-    items.push({ kind: "toggle", label: t("tagSunbeds"), variant: "default", key: "hasSunbeds" });
-  }
-  if (isTruthyAttribute(beach.attributes?.shop_nearby_boolean)) {
-    items.push({
-      kind: "toggle",
-      label: t("tagShopNearby"),
-      variant: "default",
-      key: "hasShopNearby",
-    });
-  }
-  if (isTruthyAttribute(beach.attributes?.restaurant_nearby_boolean)) {
-    items.push({
-      kind: "toggle",
-      label: t("tagRestaurantNearby"),
-      variant: "default",
-      key: "hasRestaurantNearby",
-    });
-  }
-  if (isTruthyAttribute(beach.attributes?.dog_friendly_boolean)) {
-    items.push({
-      kind: "toggle",
-      label: t("tagDogFriendly"),
-      variant: "default",
-      key: "dogFriendly",
-    });
-  }
-  if (
-    typeof beach.attributes?.webcam_link === "string" &&
-    beach.attributes.webcam_link
-  ) {
-    items.push({ kind: "toggle", label: t("filterWebcam"), variant: "default", key: "hasWebcam" });
-  }
 
   const canToggle =
     interactive && filterState != null && onFilterPatch != null;

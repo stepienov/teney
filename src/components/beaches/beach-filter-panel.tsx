@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import {
   BEACH_SURFACE_OPTIONS,
+  hasWeatherFilters,
   toggleFilterId,
   type BeachFilterState,
 } from "@/components/beaches/beach-filter-state";
@@ -93,6 +94,29 @@ export function BeachFilterPanel({
     </>
   );
 
+  const weatherRows = (
+    <>
+      <FilterSwitchRow
+        checked={value.dryToday}
+        label={t("filterDryToday")}
+        onChange={(checked) => patch({ dryToday: checked })}
+        variant={variant}
+      />
+      <FilterSwitchRow
+        checked={value.lightWind}
+        label={t("filterLightWind")}
+        onChange={(checked) => patch({ lightWind: checked })}
+        variant={variant}
+      />
+      <FilterSwitchRow
+        checked={value.clearSky}
+        label={t("filterClearSky")}
+        onChange={(checked) => patch({ clearSky: checked })}
+        variant={variant}
+      />
+    </>
+  );
+
   const surfaceRows = BEACH_SURFACE_OPTIONS.map((surface) => (
     <FilterSwitchRow
       key={surface}
@@ -128,16 +152,20 @@ export function BeachFilterPanel({
       <div className="flex flex-col">
         {attributeRows}
         <FilterMobileExpandable
+          label={t("filterWeatherToday")}
+          hasActive={hasWeatherFilters(value)}
+        >
+          {weatherRows}
+        </FilterMobileExpandable>
+        <FilterMobileExpandable
           label={t("filterSurface")}
           hasActive={value.beachSurfaces.length > 0}
-          accentLabel
         >
           {surfaceRows}
         </FilterMobileExpandable>
         <FilterMobileExpandable
           label={t("filterRegionMenu")}
           hasActive={value.regionIds.length > 0}
-          accentLabel
         >
           {regionRows}
         </FilterMobileExpandable>
@@ -155,9 +183,19 @@ export function BeachFilterPanel({
 
       <div className="space-y-0.5 px-1.5 pb-0.5">
         <FilterSubmenu
+          label={t("filterWeatherToday")}
+          hasActive={hasWeatherFilters(value)}
+          clearLabel={t("clearWeather")}
+          onClear={() => patch({ dryToday: false, lightWind: false, clearSky: false })}
+        >
+          {weatherRows}
+        </FilterSubmenu>
+
+        <FilterSubmenu
           label={t("filterSurface")}
           hasActive={value.beachSurfaces.length > 0}
-          accentLabel
+          clearLabel={t("clearSurface")}
+          onClear={() => patch({ beachSurfaces: [] })}
         >
           {surfaceRows}
         </FilterSubmenu>
@@ -165,7 +203,8 @@ export function BeachFilterPanel({
         <FilterSubmenu
           label={t("filterRegionMenu")}
           hasActive={value.regionIds.length > 0}
-          accentLabel
+          clearLabel={t("clearRegions")}
+          onClear={() => patch({ regionIds: [] })}
         >
           {regionRows}
         </FilterSubmenu>

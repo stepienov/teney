@@ -262,14 +262,14 @@ export function FilterCheckboxRow({
 type FilterSubmenuProps = {
   label: string;
   hasActive?: boolean;
-  accentLabel?: boolean;
+  clearLabel?: string;
+  onClear?: () => void;
   children: ReactNode;
 };
 
 export function FilterMobileExpandable({
   label,
   hasActive = false,
-  accentLabel = false,
   children,
 }: FilterSubmenuProps) {
   const [open, setOpen] = useState(false);
@@ -285,7 +285,7 @@ export function FilterMobileExpandable({
         <span
           className={cn(
             "text-sm font-medium",
-            accentLabel || hasActive ? "text-brand" : "text-foreground",
+            hasActive ? "text-brand" : "text-foreground",
           )}
         >
           {label}
@@ -309,7 +309,8 @@ export function FilterMobileExpandable({
 export function FilterSubmenu({
   label,
   hasActive = false,
-  accentLabel = false,
+  clearLabel,
+  onClear,
   children,
 }: FilterSubmenuProps) {
   const [open, setOpen] = useState(false);
@@ -329,15 +330,41 @@ export function FilterSubmenu({
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <span
-          className={cn(
-            "min-w-0 flex-1 truncate",
-            accentLabel || hasActive ? "font-medium text-brand" : "text-foreground",
-          )}
-        >
-          {label}
+        <span className="inline-flex min-w-0 items-center gap-0.5">
+          <span
+            className={cn(
+              "truncate",
+              hasActive ? "font-medium text-brand" : "text-foreground",
+            )}
+          >
+            {label}
+          </span>
+          {hasActive && onClear ? (
+            <button
+              type="button"
+              className="inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-brand/80 transition-colors hover:bg-muted hover:text-brand"
+              aria-label={clearLabel}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onClear();
+              }}
+            >
+              <X className="size-3.5" aria-hidden />
+            </button>
+          ) : null}
         </span>
-        <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <ChevronRight
+          className={cn(
+            "ml-auto size-4 shrink-0 text-muted-foreground",
+            hasActive && "text-brand/70",
+          )}
+          aria-hidden
+        />
       </div>
 
       <div

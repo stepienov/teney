@@ -1,10 +1,5 @@
 import { apiJson, apiPost } from "@/lib/api-client";
-import type {
-  BeachAttributes,
-  PoiDto,
-  PoiSearchRequest,
-  SpringPage,
-} from "@/lib/types/poi";
+import type { PoiDto, PoiSearchRequest, SpringPage } from "@/lib/types/poi";
 
 export const BEACH_PAGE_SIZE = 10;
 export const DEFAULT_NEAR_ME_RADIUS_KM = 0;
@@ -24,25 +19,9 @@ export async function searchPois(
   return apiPost<SpringPage<PoiDto>>(path, body);
 }
 
-export type BeachAttributeIndexItem = {
-  id: number;
-  attributes: BeachAttributes | null;
-};
-
 type BeachNameSuggestionItem = {
   name: string | null;
 };
-
-export async function fetchBeachAttributeIndex(): Promise<
-  BeachAttributeIndexItem[]
-> {
-  const beaches = await apiJson<BeachAttributeIndexItem[]>("/api/beaches");
-
-  return beaches.map((beach) => ({
-    id: beach.id,
-    attributes: beach.attributes ?? null,
-  }));
-}
 
 export async function fetchBeachNameSuggestions(): Promise<string[]> {
   const beaches = await apiJson<BeachNameSuggestionItem[]>("/api/beaches");
@@ -136,6 +115,3 @@ export function buildBeachSearchRequest(
   };
 }
 
-export type BeachPageWithDistances = SpringPage<PoiDto> & {
-  distancesKm: Map<number, number>;
-};

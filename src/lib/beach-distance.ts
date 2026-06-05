@@ -1,6 +1,6 @@
 import { distanceKm as calculateDistanceKm } from "@/lib/geo/distance";
 import type { UserCoords } from "@/hooks/use-geolocation";
-import type { BeachPageWithDistances } from "@/lib/api/poi-search";
+import type { BeachPageWithDistances } from "@/lib/api/beaches-search";
 import type { PoiDto } from "@/lib/types/poi";
 
 /** Odczyt mapy odległości z odpowiedzi API (Map lub po deserializacji). */

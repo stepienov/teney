@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { BeachFilterPanel } from "@/components/beaches/beach-filter-panel";
+import { BeachWeatherFilterChips } from "@/components/beaches/beach-weather-filter-chips";
 import {
   clearBeachFilters,
   hasBeachFilters,
@@ -124,8 +125,10 @@ export function BeachFilterMobile({
   }
 
   const sortOptions = [
-    { value: "name", label: t("sortName") },
+    { value: "weather.tempMax", label: t("sortWarmest") },
+    { value: "weather.windSpeed", label: t("sortLightestWind") },
     { value: "location", label: t("sortNearest") },
+    { value: "name", label: t("sortName") },
   ] as const;
 
   const handleFilterOpenChange = useCallback(
@@ -156,9 +159,45 @@ export function BeachFilterMobile({
 
   return (
     <div className="sticky top-0 z-30 -mx-4 border-b border-border bg-white sm:hidden">
-      <h1 className="border-b border-border py-3 text-center text-base font-bold tracking-wide text-foreground">
-        {t("pageTitle")}
-      </h1>
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <h1 className="min-w-0 text-base font-bold tracking-wide text-foreground">
+          {t("pageTitle")}
+        </h1>
+        <div
+          className="flex shrink-0 items-center gap-1.5"
+          role="group"
+          aria-label={t("viewModeLabel")}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn(
+              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              viewMode === "list" && "border-brand/50 bg-brand-muted text-brand",
+            )}
+            aria-pressed={viewMode === "list"}
+            aria-label={t("viewList")}
+            onClick={() => onViewModeChange("list")}
+          >
+            <List className="size-4" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn(
+              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              viewMode === "grid" && "border-brand/50 bg-brand-muted text-brand",
+            )}
+            aria-pressed={viewMode === "grid"}
+            aria-label={t("viewGrid")}
+            onClick={() => onViewModeChange("grid")}
+          >
+            <LayoutGrid className="size-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
 
       <label className="relative block border-b border-border px-4 py-2.5">
         <span className="sr-only">{t("searchName")}</span>
@@ -229,37 +268,11 @@ export function BeachFilterMobile({
         </button>
       </div>
 
-      <div className="flex items-center justify-end gap-2 px-4 py-2.5">
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
-              viewMode === "list" && "border-brand/50 bg-brand-muted text-brand",
-            )}
-            aria-pressed={viewMode === "list"}
-            aria-label={t("viewList")}
-            onClick={() => onViewModeChange("list")}
-          >
-            <List className="size-4" aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
-              viewMode === "grid" && "border-brand/50 bg-brand-muted text-brand",
-            )}
-            aria-pressed={viewMode === "grid"}
-            aria-label={t("viewGrid")}
-            onClick={() => onViewModeChange("grid")}
-          >
-            <LayoutGrid className="size-4" aria-hidden />
-          </Button>
-        </div>
+      <div className="border-b border-border px-4 py-2.5">
+        <BeachWeatherFilterChips
+          value={value}
+          onApply={patchFromHeader}
+        />
       </div>
 
       <Sheet open={filterOpen} onOpenChange={handleFilterOpenChange}>
