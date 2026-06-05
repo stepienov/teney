@@ -55,6 +55,8 @@
     "colResizeHint": "Arrastra el borde de la columna para redimensionar",
     "colActions": "Acciones",
     "searchName": "Buscar por nombre",
+    "searchSubmit": "Buscar",
+    "recentSearches": "Búsquedas recientes",
     "searchPlaceholder": "p. ej. Playa de las Teresitas",
     "searchBeachName": "Nombre de playa",
     "region": "Región",

@@ -1,10 +1,11 @@
 "use client";
 
-import { LayoutGrid, List, Search } from "lucide-react";
+import { LayoutGrid, List } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { BeachFilterMobile } from "@/components/beaches/beach-filter-mobile";
+import { BeachNameSearch } from "@/components/beaches/beach-name-search";
 import { BeachFilterPanel } from "@/components/beaches/beach-filter-panel";
 import { BeachWeatherFilterChips } from "@/components/beaches/beach-weather-filter-chips";
 import {
@@ -71,19 +72,12 @@ export function BeachFilterBar({
       />
 
       <div className="mb-4 hidden items-center gap-2 sm:flex">
-        <label className="relative w-80 shrink-0">
-          <span className="sr-only">{t("searchName")}</span>
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <input
-            type="search"
-            value={value.name}
-            onChange={(event) => patch({ ...value, name: event.target.value })}
-            className="h-9 w-full rounded-md border border-border bg-white pr-3 pl-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </label>
+        <BeachNameSearch
+          key={value.name}
+          value={value.name}
+          variant="desktop"
+          onSubmit={(name) => patch({ ...value, name })}
+        />
 
         <FilterMenu
           label={t("filterMenu")}

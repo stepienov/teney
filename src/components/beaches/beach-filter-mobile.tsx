@@ -1,10 +1,11 @@
 "use client";
 
-import { LayoutGrid, List, Search, X } from "lucide-react";
+import { LayoutGrid, List, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { BeachFilterPanel } from "@/components/beaches/beach-filter-panel";
+import { BeachNameSearch } from "@/components/beaches/beach-name-search";
 import { BeachWeatherFilterChips } from "@/components/beaches/beach-weather-filter-chips";
 import {
   clearBeachFilters,
@@ -69,14 +70,19 @@ export function BeachFilterMobile({
   const [sheetDraft, setSheetDraft] = useState(value);
   const sheetDraftRef = useRef(value);
   const applyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [prevAppliedValue, setPrevAppliedValue] = useState(value);
   const regions = useMemo(() => uniqueRegions(municipalities), [municipalities]);
+
+  if (!filterOpen && value !== prevAppliedValue) {
+    setPrevAppliedValue(value);
+    setSheetDraft(value);
+  }
 
   useEffect(() => {
     if (!filterOpen) {
-      sheetDraftRef.current = value;
-      setSheetDraft(value);
+      sheetDraftRef.current = sheetDraft;
     }
-  }, [value, filterOpen]);
+  }, [filterOpen, sheetDraft]);
 
   useEffect(() => {
     return () => {
@@ -199,21 +205,14 @@ export function BeachFilterMobile({
         </div>
       </div>
 
-      <label className="relative block border-b border-border px-4 py-2.5">
-        <span className="sr-only">{t("searchName")}</span>
-        <Search
-          className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
-        <input
-          type="search"
+      <div className="border-b border-border px-4 py-2.5">
+        <BeachNameSearch
+          key={value.name}
           value={value.name}
-          onChange={(event) =>
-            patchFromHeader({ ...value, name: event.target.value })
-          }
-          className="h-10 w-full rounded-md border border-border bg-white pr-3 pl-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          variant="mobile"
+          onSubmit={(name) => patchFromHeader({ ...value, name })}
         />
-      </label>
+      </div>
 
       <div className="grid grid-cols-2 border-b border-border">
         <button
