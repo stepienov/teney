@@ -1,10 +1,6 @@
 import { ApiError, apiJson, apiPost } from "@/lib/api-client";
 import type { UserCoords } from "@/hooks/use-geolocation";
-import {
-  beachMatchesNameOnlySlug,
-  parseBeachIdFromSlugParam,
-  unslugifyBeachName,
-} from "@/lib/beach-slug";
+import { parseBeachIdFromSlugParam } from "@/lib/beach-slug";
 import type {
   BeachDisplayWeather,
   BeachListItemDto,
@@ -215,31 +211,18 @@ export async function fetchBeachById(options: {
   }
 }
 
-/** Resolve a beach from `/beaches/{slug}` (name slug or legacy numeric id). */
+/** Resolve a beach from `/beaches/{slug}` (`{id}-{name}` or legacy numeric id). */
 export async function fetchBeachBySlug(
   slug: string,
   locale: string,
   weatherDate?: string,
 ): Promise<PoiDto | null> {
   const id = parseBeachIdFromSlugParam(slug);
-  if (id != null) {
-    return fetchBeachById({ id, locale, weatherDate });
+  if (id == null) {
+    return null;
   }
 
-  const page = await searchBeaches({
-    locale,
-    page: 0,
-    size: 100,
-    sort: "name",
-    sortDirection: "ASC",
-    name: unslugifyBeachName(slug),
-    weatherDate,
-  });
-
-  const matches = page.content.filter((beach) =>
-    beachMatchesNameOnlySlug(beach, slug),
-  );
-  return matches[0] ?? null;
+  return fetchBeachById({ id, locale, weatherDate });
 }
 
 /** POST /api/beaches/search — beach list (grid, table, map). */

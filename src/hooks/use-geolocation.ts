@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import {
+  readGeoCacheEntry,
+  writeGeoCache,
+} from "@/lib/cache/geo-cache";
+import { CACHE_POLICY } from "@/lib/query/cache-policy";
+
 export type UserCoords = { lat: number; lon: number; accuracyMeters: number };
 
 export type GeolocationPermission = "unknown" | "prompt" | "granted" | "denied";
@@ -28,9 +34,9 @@ export type GeolocationHandle = GeolocationState & {
 };
 
 const GEO_OPTIONS: PositionOptions = {
-  enableHighAccuracy: true,
-  timeout: 20_000,
-  maximumAge: 0,
+  enableHighAccuracy: false,
+  timeout: 15_000,
+  maximumAge: CACHE_POLICY.geo.maxAgeMs,
 };
 
 function fetchGeolocation(commit: (next: GeolocationState) => void): void {
@@ -43,13 +49,15 @@ function fetchGeolocation(commit: (next: GeolocationState) => void): void {
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
+      const coords: UserCoords = {
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+        accuracyMeters: position.coords.accuracy,
+      };
+      writeGeoCache(coords);
       commit({
         status: "ready",
-        coords: {
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-          accuracyMeters: position.coords.accuracy,
-        },
+        coords,
       });
     },
     (error) => {
@@ -66,11 +74,28 @@ function fetchGeolocation(commit: (next: GeolocationState) => void): void {
   );
 }
 
+function readCachedReadyState(): GeolocationState {
+  const cached = readGeoCacheEntry();
+  if (cached == null) {
+    return { status: "idle" };
+  }
+
+  return { status: "ready", coords: cached.coords };
+}
+
 export function useGeolocation({ enabled }: Options): GeolocationHandle {
-  const [state, setState] = useState<GeolocationState>({ status: "idle" });
+  const [state, setState] = useState<GeolocationState>(readCachedReadyState);
   const [permission, setPermission] = useState<GeolocationPermission>("unknown");
 
   const request = useCallback(() => {
+    const cached = readGeoCacheEntry();
+    if (cached != null) {
+      setState({ status: "ready", coords: cached.coords });
+      if (cached.fresh) {
+        return;
+      }
+    }
+
     fetchGeolocation(setState);
   }, []);
 

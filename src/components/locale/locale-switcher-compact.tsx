@@ -5,12 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { LocaleFlag } from "@/components/locale/locale-flag";
-import {
-  type AppLocale,
-  locales,
-  usePathname,
-  useRouter,
-} from "@/i18n/routing";
+import { useNavigationRouter } from "@/components/providers/navigation-loading";
+import { type AppLocale, locales, usePathname } from "@/i18n/routing";
 import { localeMenuLabels } from "@/i18n/locale-flags";
 import { currentSearchQuery } from "@/lib/locale-href";
 import { cn } from "@/lib/utils";
@@ -26,7 +22,7 @@ const triggerClass =
 export function LocaleSwitcherCompact({ tone = "default" }: LocaleSwitcherCompactProps) {
   const t = useTranslations("locale");
   const locale = useLocale() as AppLocale;
-  const router = useRouter();
+  const router = useNavigationRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 

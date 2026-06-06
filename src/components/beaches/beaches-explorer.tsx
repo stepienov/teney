@@ -8,6 +8,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -24,7 +25,7 @@ import { BeachResultsTable } from "@/components/beaches/beach-results-table";
 import { useGeolocation, type GeolocationHandle } from "@/hooks/use-geolocation";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useLocalStorageChoice } from "@/hooks/use-local-storage-flag";
-import { useRouter } from "@/i18n/routing";
+import { useNavigationRouter } from "@/components/providers/navigation-loading";
 import { DEFAULT_NEAR_ME_RADIUS_KM } from "@/lib/api/poi-search";
 import {
   getDistancesKmFromPage,
@@ -232,8 +233,9 @@ function BeachesExplorerContent({
 }) {
   const t = useTranslations("beaches");
   const locale = useLocale();
-  const router = useRouter();
+  const router = useNavigationRouter();
   const isMobile = useIsMobile();
+  const [hasMounted, setHasMounted] = useState(false);
   const wantsLocationSortRef = useRef(false);
   const geoBootstrappedRef = useRef(false);
 
@@ -284,7 +286,7 @@ function BeachesExplorerContent({
     isError: desktopError,
   } = useQuery({
     ...beachSearchQueryOptions(desktopSearchParams, userCoords),
-    enabled: !isMobile,
+    enabled: hasMounted && !isMobile,
   });
 
   const {
@@ -296,7 +298,7 @@ function BeachesExplorerContent({
     fetchNextPage,
   } = useInfiniteQuery({
     ...beachSearchInfiniteQueryOptions(baseSearchParams, userCoords),
-    enabled: isMobile,
+    enabled: hasMounted && isMobile,
   });
 
   const beaches = isMobile
@@ -415,6 +417,10 @@ function BeachesExplorerContent({
     }
     void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     if (geoBootstrappedRef.current) {

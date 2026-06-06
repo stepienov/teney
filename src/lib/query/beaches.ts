@@ -6,6 +6,14 @@ import {
   DEFAULT_BEACH_PAGE_SIZE,
   MOBILE_BEACH_PAGE_SIZE,
 } from "@/lib/beach-pagination";
+import { CACHE_POLICY } from "@/lib/query/cache-policy";
+import {
+  POI_CATEGORY,
+  poiFiltersQueryKey,
+  poiInfiniteSearchQueryKey,
+  poiSearchQueryKey,
+  referenceQueryKeys,
+} from "@/lib/query/keys";
 import type { UserCoords } from "@/hooks/use-geolocation";
 
 export type BeachSearchParams = {
@@ -33,7 +41,8 @@ export type BeachSearchParams = {
 
 export type BeachSearchBaseParams = Omit<BeachSearchParams, "page" | "pageSize">;
 
-export const beachFiltersQueryKey = ["beach-filters"] as const;
+/** @deprecated Use poiFiltersQueryKey(POI_CATEGORY.beaches). */
+export const beachFiltersQueryKey = poiFiltersQueryKey(POI_CATEGORY.beaches);
 
 function toSearchBeachesArgs(
   params: BeachSearchParams,
@@ -66,12 +75,13 @@ function toSearchBeachesArgs(
 
 export function beachFiltersQueryOptions() {
   return queryOptions({
-    queryKey: beachFiltersQueryKey,
+    queryKey: poiFiltersQueryKey(POI_CATEGORY.beaches),
     queryFn: async () => {
       const municipalities = await fetchMunicipalities();
       return { municipalities };
     },
-    staleTime: 5 * 60_000,
+    staleTime: CACHE_POLICY.reference.staleTime,
+    gcTime: CACHE_POLICY.reference.gcTime,
   });
 }
 
@@ -79,10 +89,19 @@ export function beachSearchQueryOptions(
   params: BeachSearchParams,
   userCoords: UserCoords | undefined,
 ) {
+  const nearMe = params.nearMe === true;
+
   return queryOptions({
-    queryKey: ["beaches", params, userCoords] as const,
+    queryKey: poiSearchQueryKey(
+      POI_CATEGORY.beaches,
+      params,
+      nearMe,
+      userCoords,
+    ),
     queryFn: () => searchBeaches(toSearchBeachesArgs(params, userCoords)),
-    enabled: !params.nearMe || userCoords != null,
+    enabled: !nearMe || userCoords != null,
+    staleTime: CACHE_POLICY.poiSearch.staleTime,
+    gcTime: CACHE_POLICY.poiSearch.gcTime,
     placeholderData: keepPreviousData,
   });
 }
@@ -92,9 +111,16 @@ export function beachSearchInfiniteQueryOptions(
   userCoords: UserCoords | undefined,
 ) {
   const pageSize = MOBILE_BEACH_PAGE_SIZE;
+  const nearMe = params.nearMe === true;
 
   return infiniteQueryOptions({
-    queryKey: ["beaches-infinite", params, userCoords, pageSize] as const,
+    queryKey: poiInfiniteSearchQueryKey(
+      POI_CATEGORY.beaches,
+      params,
+      pageSize,
+      nearMe,
+      userCoords,
+    ),
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       searchBeaches(
@@ -105,9 +131,12 @@ export function beachSearchInfiniteQueryOptions(
       ),
     getNextPageParam: (lastPage) =>
       lastPage.last ? undefined : lastPage.number + 1,
-    enabled: !params.nearMe || userCoords != null,
+    enabled: !nearMe || userCoords != null,
+    staleTime: CACHE_POLICY.poiSearch.staleTime,
+    gcTime: CACHE_POLICY.poiSearch.gcTime,
     placeholderData: keepPreviousData,
   });
 }
 
 export { DEFAULT_BEACH_PAGE_SIZE, MOBILE_BEACH_PAGE_SIZE };
+export { referenceQueryKeys };

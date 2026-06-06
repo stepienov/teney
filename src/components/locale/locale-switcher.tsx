@@ -4,7 +4,8 @@ import { Check, ChevronDown, Languages } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
-import { type AppLocale, localeLabels, usePathname, useRouter } from "@/i18n/routing";
+import { useNavigationRouter } from "@/components/providers/navigation-loading";
+import { type AppLocale, localeLabels, usePathname } from "@/i18n/routing";
 import { currentSearchQuery } from "@/lib/locale-href";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +20,7 @@ export function LocaleSwitcher({
 }: LocaleSwitcherProps) {
   const t = useTranslations("locale");
   const locale = useLocale() as AppLocale;
-  const router = useRouter();
+  const router = useNavigationRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);

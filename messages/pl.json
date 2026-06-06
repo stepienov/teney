@@ -17,7 +17,8 @@
     "mainNav": "Menu główne",
     "collapseSidebar": "Zwiń panel boczny",
     "expandSidebar": "Rozwiń panel boczny",
-    "openMenu": "Otwórz menu"
+    "openMenu": "Otwórz menu",
+    "navigationLoading": "Ładowanie strony…"
   },
   "home": {
     "badge": "Chill & relax — wyspa bez pośpiechu",

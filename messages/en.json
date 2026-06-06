@@ -17,7 +17,8 @@
     "mainNav": "Main menu",
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "navigationLoading": "Loading page…"
   },
   "home": {
     "badge": "Chill & relax — island without rush",

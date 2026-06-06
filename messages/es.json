@@ -17,7 +17,8 @@
     "mainNav": "Menú principal",
     "collapseSidebar": "Contraer barra lateral",
     "expandSidebar": "Expandir barra lateral",
-    "openMenu": "Abrir menú"
+    "openMenu": "Abrir menú",
+    "navigationLoading": "Cargando página…"
   },
   "home": {
     "badge": "Chill & relax — isla sin prisas",

@@ -10,7 +10,8 @@
     "mainNav": "Hauptmenü",
     "collapseSidebar": "Seitenleiste einklappen",
     "expandSidebar": "Seitenleiste ausklappen",
-    "openMenu": "Menü öffnen"
+    "openMenu": "Menü öffnen",
+    "navigationLoading": "Seite wird geladen…"
   },
   "nav": {
     "home": "Start",
