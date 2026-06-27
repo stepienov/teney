@@ -96,33 +96,47 @@ export function NavigationLoadingProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [isNavigating, setIsNavigating] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = useLocale();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const routeKey = useMemo(
+    () => `${locale}:${pathname}:${searchParams.toString()}`,
+    [locale, pathname, searchParams],
+  );
+  const [activeNavigationFrom, setActiveNavigationFrom] = useState<
+    string | null
+  >(null);
+
+  if (
+    activeNavigationFrom != null &&
+    activeNavigationFrom !== routeKey
+  ) {
+    setActiveNavigationFrom(null);
+  }
+
+  const isNavigating =
+    activeNavigationFrom != null && activeNavigationFrom === routeKey;
 
   const startNavigation = useCallback(() => {
-    setIsNavigating(true);
+    setActiveNavigationFrom(routeKey);
 
     if (timeoutRef.current != null) {
       clearTimeout(timeoutRef.current);
     }
 
     timeoutRef.current = setTimeout(() => {
-      setIsNavigating(false);
+      setActiveNavigationFrom(null);
       timeoutRef.current = null;
     }, NAVIGATION_LOADING_TIMEOUT_MS);
-  }, []);
+  }, [routeKey]);
 
   useEffect(() => {
-    setIsNavigating(false);
-
     if (timeoutRef.current != null) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-  }, [locale, pathname, searchParams]);
+  }, [routeKey]);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {

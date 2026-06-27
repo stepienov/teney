@@ -16,6 +16,7 @@ type BeachPaginationBarProps = {
   pageSize: BeachPageSize;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: BeachPageSize) => void;
+  translationNamespace?: "beaches" | "miradores";
 };
 
 export function BeachPaginationBar({
@@ -24,8 +25,9 @@ export function BeachPaginationBar({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  translationNamespace = "beaches",
 }: BeachPaginationBarProps) {
-  const t = useTranslations("beaches");
+  const t = useTranslations(translationNamespace);
   const items = buildPaginationRange(currentPage, totalPages);
   const prevDisabled = currentPage <= 0;
   const nextDisabled = currentPage >= totalPages - 1;

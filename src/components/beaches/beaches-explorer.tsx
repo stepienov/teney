@@ -8,13 +8,14 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
+  useSyncExternalStore,
 } from "react";
 import { useSearchParams } from "next/navigation";
 
+import dynamic from "next/dynamic";
+
 import { BeachFilterBar } from "@/components/beaches/beach-filter-bar";
 import {
-  DEFAULT_BEACH_SORT,
   type BeachFilterState,
 } from "@/components/beaches/beach-filter-state";
 import { BeachCard } from "@/components/beaches/beach-card";
@@ -22,6 +23,8 @@ import { BeachLoadMoreSentinel } from "@/components/beaches/beach-load-more-sent
 import { BeachLoadingIndicator } from "@/components/beaches/beach-loading-indicator";
 import { BeachPaginationBar } from "@/components/beaches/beach-pagination-bar";
 import { BeachResultsTable } from "@/components/beaches/beach-results-table";
+import { PoiCategoryProvider } from "@/components/poi-explorer/poi-category-context";
+import { beachesExplorerConfig } from "@/lib/poi-categories/beaches";
 import { useGeolocation, type GeolocationHandle } from "@/hooks/use-geolocation";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useLocalStorageChoice } from "@/hooks/use-local-storage-flag";
@@ -37,15 +40,21 @@ import {
   parseBeachPageSize,
   type BeachPageSize,
 } from "@/lib/beach-pagination";
-import {
-  beachFiltersQueryOptions,
-  beachSearchInfiniteQueryOptions,
-  beachSearchQueryOptions,
-  type BeachSearchBaseParams,
-  type BeachSearchParams,
-} from "@/lib/query/beaches";
+import { BEACH_VIEW_MODES } from "@/lib/beach-view-mode";
+import type { PoiCategoryExplorerConfig, PoiSearchPage } from "@/lib/poi-categories/types";
+import type { MunicipalityRef, PoiDto } from "@/lib/types/poi";
+import { cn } from "@/lib/utils";
 
-const VIEW_STORAGE_KEY = "teney-beach-view";
+const BeachMapView = dynamic(
+  () =>
+    import("@/components/beaches/beach-map-view").then(
+      (module) => module.BeachMapView,
+    ),
+  {
+    ssr: false,
+    loading: () => <BeachLoadingIndicator className="min-h-[280px]" />,
+  },
+);
 
 function isGeoFailed(geo: GeolocationHandle): boolean {
   return (
@@ -95,8 +104,8 @@ function parseRadiusKm(value: string | null): number {
   return Math.min(100, Math.max(5, Math.round(parsed / 5) * 5));
 }
 
-function normalizeSortParam(sort: string | null): string {
-  const value = sort ?? DEFAULT_BEACH_SORT;
+function normalizeSortParam(sort: string | null, defaultSort: string): string {
+  const value = sort ?? defaultSort;
   if (value === "municipality.name" || value === "region.name") {
     return "name";
   }
@@ -106,11 +115,14 @@ function normalizeSortParam(sort: string | null): string {
   return value;
 }
 
-function parseFiltersFromParams(params: URLSearchParams): AppliedBeachFilters {
+function parseFiltersFromParams(
+  params: URLSearchParams,
+  config: PoiCategoryExplorerConfig,
+): AppliedBeachFilters {
   return {
     name: params.get("q") ?? "",
     regionIds: parseIdList(params.get("regions"), params.get("region")),
-    sort: normalizeSortParam(params.get("sort")),
+    sort: normalizeSortParam(params.get("sort"), config.defaultSort),
     sortDirection: (params.get("dir") === "DESC" ? "DESC" : "ASC") as
       | "ASC"
       | "DESC",
@@ -158,11 +170,12 @@ function filtersToSearchParams(
   nearMe: boolean,
   radiusKm: number,
   pageSize: number,
+  defaultSort: string,
 ): URLSearchParams {
   const p = new URLSearchParams();
   if (filters.name.trim()) p.set("q", filters.name.trim());
   if (filters.regionIds.length) p.set("regions", filters.regionIds.join(","));
-  if (filters.sort !== DEFAULT_BEACH_SORT) p.set("sort", filters.sort);
+  if (filters.sort !== defaultSort) p.set("sort", filters.sort);
   if (filters.hasLifeguard) p.set("lifeguard", "1");
   if (filters.hasShower) p.set("shower", "1");
   if (filters.beachSurfaces.length) {
@@ -187,61 +200,50 @@ function filtersToSearchParams(
   return p;
 }
 
-function toSearchBaseParams(
-  filters: BeachFilterState,
-  locale: string,
-  nearMe: boolean,
-  radiusKm: number,
-): BeachSearchBaseParams {
-  return {
-    locale,
-    sort: filters.sort,
-    sortDirection: filters.sortDirection,
-    nearMe,
-    radiusKm,
-    name: filters.name.trim() || undefined,
-    regionIds: filters.regionIds.length > 0 ? filters.regionIds : undefined,
-    hasLifeguard: filters.hasLifeguard || undefined,
-    hasShower: filters.hasShower || undefined,
-    beachSurfaces:
-      filters.beachSurfaces.length > 0 ? filters.beachSurfaces : undefined,
-    hasSunbeds: filters.hasSunbeds || undefined,
-    hasShopNearby: filters.hasShopNearby || undefined,
-    hasRestaurantNearby: filters.hasRestaurantNearby || undefined,
-    dogFriendly: filters.dogFriendly || undefined,
-    hasWebcam: filters.hasWebcam || undefined,
-    dryToday: filters.dryToday || undefined,
-    lightWind: filters.lightWind || undefined,
-    clearSky: filters.clearSky || undefined,
-  };
+export function PoiExplorer({ config }: { config: PoiCategoryExplorerConfig }) {
+  return (
+    <PoiCategoryProvider config={config}>
+      <PoiExplorerRoutes config={config} />
+    </PoiCategoryProvider>
+  );
+}
+
+function PoiExplorerRoutes({ config }: { config: PoiCategoryExplorerConfig }) {
+  const urlParams = useSearchParams();
+  const applied = useMemo(
+    () => parseFiltersFromParams(urlParams, config),
+    [urlParams, config],
+  );
+
+  return <PoiExplorerContent config={config} applied={applied} />;
 }
 
 export function BeachesExplorer() {
-  const urlParams = useSearchParams();
-  const applied = useMemo(
-    () => parseFiltersFromParams(urlParams),
-    [urlParams],
-  );
-
-  return <BeachesExplorerContent applied={applied} />;
+  return <PoiExplorer config={beachesExplorerConfig} />;
 }
 
-function BeachesExplorerContent({
+function PoiExplorerContent({
+  config,
   applied,
 }: {
+  config: PoiCategoryExplorerConfig;
   applied: AppliedBeachFilters;
 }) {
-  const t = useTranslations("beaches");
+  const t = useTranslations(config.messagesNamespace);
   const locale = useLocale();
   const router = useNavigationRouter();
   const isMobile = useIsMobile();
-  const [hasMounted, setHasMounted] = useState(false);
+  const hasMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const wantsLocationSortRef = useRef(false);
   const geoBootstrappedRef = useRef(false);
 
   const [viewMode, setViewMode] = useLocalStorageChoice(
-    VIEW_STORAGE_KEY,
-    ["grid", "list"] as const,
+    config.viewStorageKey,
+    BEACH_VIEW_MODES,
     "list",
   );
 
@@ -255,23 +257,23 @@ function BeachesExplorerContent({
   );
 
   const { data: filterData, isLoading: filtersLoading } = useQuery(
-    beachFiltersQueryOptions(),
+    config.filtersQueryOptions(),
   );
 
-  const municipalities = filterData?.municipalities ?? [];
+  const mapMode = viewMode === "map";
 
   const baseSearchParams = useMemo(
     () =>
-      toSearchBaseParams(
+      config.toSearchBaseParams(
         applied,
         locale,
         locationSortActive,
         applied.radiusKm,
       ),
-    [applied, locale, locationSortActive],
+    [applied, config, locale, locationSortActive],
   );
 
-  const desktopSearchParams = useMemo<BeachSearchParams>(
+  const desktopSearchParams = useMemo(
     () => ({
       ...baseSearchParams,
       page: applied.page,
@@ -285,8 +287,17 @@ function BeachesExplorerContent({
     isPending: desktopPending,
     isError: desktopError,
   } = useQuery({
-    ...beachSearchQueryOptions(desktopSearchParams, userCoords),
-    enabled: hasMounted && !isMobile,
+    ...config.searchQueryOptions(desktopSearchParams, userCoords),
+    enabled: hasMounted && !isMobile && !mapMode,
+  });
+
+  const {
+    data: mapBeaches,
+    isPending: mapPending,
+    isError: mapError,
+  } = useQuery({
+    ...config.mapSearchQueryOptions(baseSearchParams, userCoords),
+    enabled: hasMounted && mapMode,
   });
 
   const {
@@ -297,13 +308,15 @@ function BeachesExplorerContent({
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    ...beachSearchInfiniteQueryOptions(baseSearchParams, userCoords),
-    enabled: hasMounted && isMobile,
+    ...config.searchInfiniteQueryOptions(baseSearchParams, userCoords),
+    enabled: hasMounted && isMobile && !mapMode,
   });
 
-  const beaches = isMobile
-    ? (infiniteData?.pages.flatMap((resultPage) => resultPage.content) ?? [])
+  const listBeaches = isMobile
+    ? (infiniteData?.pages.flatMap((resultPage: PoiSearchPage) => resultPage.content) ?? [])
     : (page?.content ?? []);
+
+  const beaches = mapMode ? (mapBeaches ?? []) : listBeaches;
 
   const totalPages = isMobile
     ? (infiniteData?.pages[0]?.totalPages ?? 0)
@@ -313,11 +326,17 @@ function BeachesExplorerContent({
     ? mergeDistancesKmFromPages(infiniteData?.pages ?? [])
     : getDistancesKmFromPage(page);
 
-  const isPending = isMobile ? mobilePending : desktopPending;
-  const isError = isMobile ? mobileError : desktopError;
-  const isEmpty = isMobile
-    ? infiniteData != null && beaches.length === 0
-    : Boolean(page?.empty);
+  const isPending = mapMode
+    ? mapPending
+    : isMobile
+      ? mobilePending
+      : desktopPending;
+  const isError = mapMode ? mapError : isMobile ? mobileError : desktopError;
+  const isEmpty = mapMode
+    ? mapBeaches != null && mapBeaches.length === 0
+    : isMobile
+      ? infiniteData != null && beaches.length === 0
+      : Boolean(page?.empty);
 
   const pushFilters = useCallback(
     (
@@ -333,10 +352,11 @@ function BeachesExplorerContent({
         nearMe,
         radiusKm,
         pageSize,
+        config.defaultSort,
       ).toString();
-      router.push(qs ? `/beaches?${qs}` : "/beaches");
+      router.push(qs ? `${config.basePath}?${qs}` : config.basePath);
     },
-    [applied.pageSize, router],
+    [applied.pageSize, config.basePath, config.defaultSort, router],
   );
 
   const applyFilters = useCallback(
@@ -375,14 +395,15 @@ function BeachesExplorerContent({
         {
           ...getDraftFilters(applied),
           sort,
-          sortDirection: sort === "weather.tempMax" ? "DESC" : "ASC",
+          sortDirection:
+            config.features.weather && sort === "weather.tempMax" ? "DESC" : "ASC",
         },
         0,
         false,
         applied.radiusKm,
       );
     },
-    [applied, geo, pushFilters, userCoords],
+    [applied, config.features.weather, geo, pushFilters, userCoords],
   );
 
   const changePage = useCallback(
@@ -419,16 +440,12 @@ function BeachesExplorerContent({
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (geoBootstrappedRef.current) {
       return;
     }
     geoBootstrappedRef.current = true;
     geo.request();
-  }, [geo.request]);
+  }, [geo]);
 
   useEffect(() => {
     if (!wantsLocationSortRef.current) {
@@ -446,7 +463,7 @@ function BeachesExplorerContent({
     if (isGeoFailed(geo)) {
       wantsLocationSortRef.current = false;
     }
-  }, [applied, geo.status, geo.permission, pushFilters]);
+  }, [applied, geo, pushFilters]);
 
   useEffect(() => {
     if (!applied.nearMe || userCoords != null || isGeoPending(geo)) {
@@ -456,36 +473,58 @@ function BeachesExplorerContent({
     if (isGeoFailed(geo)) {
       pushFilters(getDraftFilters(applied), 0, false, applied.radiusKm);
     }
-  }, [applied, geo.status, geo.permission, pushFilters, userCoords]);
+  }, [applied, geo, pushFilters, userCoords]);
 
   const showResultsLoading =
-    filtersLoading || !filterData || (isPending && beaches.length === 0);
+    !hasMounted ||
+    filtersLoading ||
+    !filterData ||
+    (isPending && beaches.length === 0);
+
+  const showFiltersLoading =
+    !hasMounted || (!filterData && filtersLoading);
 
   return (
-    <section className="px-4 pt-0 pb-6 sm:px-8 sm:py-8">
-      <header className="mb-6 hidden sm:block">
+    <section
+      className={cn(
+        "px-4 pt-0 pb-6 sm:px-8 sm:pt-8",
+        mapMode
+          ? "flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden sm:pb-4"
+          : "sm:pb-8",
+      )}
+    >
+      <header className="mb-6 hidden shrink-0 sm:block">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {t("pageTitle")}
         </h1>
       </header>
 
-      {!filterData && filtersLoading ? (
+      {showFiltersLoading ? (
         <BeachLoadingIndicator className="min-h-[20rem]" />
       ) : (
         <>
-          <BeachFilterBar
-            value={committedFilters}
-            municipalities={filterData!.municipalities}
-            locationSortActive={locationSortActive}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            onApply={applyFilters}
-            onSortChange={changeSort}
-          />
+          <div className={cn(mapMode && "shrink-0")}>
+            <BeachFilterBar
+              value={committedFilters}
+              municipalities={filterData!.municipalities as MunicipalityRef[]}
+              locationSortActive={locationSortActive}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onApply={applyFilters}
+              onSortChange={changeSort}
+            />
+          </div>
 
-          <div className="min-h-[12rem]">
+          <div
+            className={cn(
+              "min-h-[12rem]",
+              mapMode && "flex min-h-0 flex-1 flex-col sm:min-h-0",
+            )}
+          >
             {showResultsLoading ? (
-              <BeachLoadingIndicator className="min-h-[20rem]" />
+              <BeachLoadingIndicator
+                className={cn("min-h-[20rem]", mapMode && "min-h-0 flex-1")}
+              />
             ) : isError ? (
               <p className="py-16 text-center text-sm text-destructive">
                 {t("error")}
@@ -494,6 +533,15 @@ function BeachesExplorerContent({
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {t("empty")}
               </p>
+            ) : viewMode === "map" ? (
+              <BeachMapView
+                className="min-h-0 flex-1"
+                beaches={beaches}
+                locale={locale}
+                distancesKm={distancesKm}
+                userCoords={userCoords}
+                onRequestLocation={geo.request}
+              />
             ) : viewMode === "list" ? (
               <BeachResultsTable
                 beaches={beaches}
@@ -503,8 +551,8 @@ function BeachesExplorerContent({
                 onFilterPatch={applyFilters}
               />
             ) : (
-              <ul className="grid grid-cols-2 gap-2 pt-3 sm:grid-cols-3 sm:pt-0 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {beaches.map((beach) => (
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {beaches.map((beach: PoiDto) => (
                   <li key={beach.id} className="relative min-w-0">
                     <BeachCard
                       beach={beach}
@@ -520,7 +568,7 @@ function BeachesExplorerContent({
             )}
           </div>
 
-          {isMobile && hasNextPage ? (
+          {isMobile && hasNextPage && !mapMode ? (
             <>
               <BeachLoadMoreSentinel
                 onVisible={loadMore}
@@ -532,11 +580,12 @@ function BeachesExplorerContent({
             </>
           ) : null}
 
-          {!isMobile && page != null ? (
+          {!isMobile && page != null && viewMode !== "map" ? (
             <BeachPaginationBar
               currentPage={page.number}
               totalPages={Math.max(1, totalPages)}
               pageSize={applied.pageSize}
+              translationNamespace={config.messagesNamespace}
               onPageChange={changePage}
               onPageSizeChange={changePageSize}
             />

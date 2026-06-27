@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import type { BeachFilterState } from "@/components/beaches/beach-filter-state";
 import { FilterBadgeToggle } from "@/components/beaches/filter-menu";
+import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
 import { cn } from "@/lib/utils";
 
 const WEATHER_CHIP_KEYS = [
@@ -26,7 +27,8 @@ export function BeachWeatherFilterChips({
   onApply,
   className,
 }: BeachWeatherFilterChipsProps) {
-  const t = useTranslations("beaches");
+  const { messagesNamespace } = usePoiCategoryConfig();
+  const t = useTranslations(messagesNamespace);
 
   return (
     <div

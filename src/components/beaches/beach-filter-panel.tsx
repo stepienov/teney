@@ -12,6 +12,7 @@ import {
   FilterSubmenu,
   FilterSwitchRow,
 } from "@/components/beaches/filter-menu";
+import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
 import { formatRegionDisplayName } from "@/lib/region-display-name";
 
 type RegionOption = { id: number; name: string };
@@ -40,7 +41,8 @@ export function BeachFilterPanel({
   onPatch,
   variant,
 }: BeachFilterPanelProps) {
-  const t = useTranslations("beaches");
+  const { messagesNamespace, features } = usePoiCategoryConfig();
+  const t = useTranslations(messagesNamespace);
   const isMobile = variant === "mobile";
 
   function patch(partial: Partial<BeachFilterState>) {
@@ -150,19 +152,23 @@ export function BeachFilterPanel({
   if (isMobile) {
     return (
       <div className="flex flex-col">
-        {attributeRows}
-        <FilterMobileExpandable
-          label={t("filterWeatherToday")}
-          hasActive={hasWeatherFilters(value)}
-        >
-          {weatherRows}
-        </FilterMobileExpandable>
-        <FilterMobileExpandable
-          label={t("filterSurface")}
-          hasActive={value.beachSurfaces.length > 0}
-        >
-          {surfaceRows}
-        </FilterMobileExpandable>
+        {features.beachAttributes ? attributeRows : null}
+        {features.weather ? (
+          <FilterMobileExpandable
+            label={t("filterWeatherToday")}
+            hasActive={hasWeatherFilters(value)}
+          >
+            {weatherRows}
+          </FilterMobileExpandable>
+        ) : null}
+        {features.beachAttributes ? (
+          <FilterMobileExpandable
+            label={t("filterSurface")}
+            hasActive={value.beachSurfaces.length > 0}
+          >
+            {surfaceRows}
+          </FilterMobileExpandable>
+        ) : null}
         <FilterMobileExpandable
           label={t("filterRegionMenu")}
           hasActive={value.regionIds.length > 0}
@@ -175,30 +181,36 @@ export function BeachFilterPanel({
 
   return (
     <div className="py-1.5">
-      <div className="space-y-0.5 px-1.5">
-        {attributeRows}
-      </div>
+      {features.beachAttributes ? (
+        <div className="space-y-0.5 px-1.5">{attributeRows}</div>
+      ) : null}
 
-      <div className="mx-2.5 my-1 border-t border-border" role="separator" />
+      {features.beachAttributes ? (
+        <div className="mx-2.5 my-1 border-t border-border" role="separator" />
+      ) : null}
 
       <div className="space-y-0.5 px-1.5 pb-0.5">
-        <FilterSubmenu
-          label={t("filterWeatherToday")}
-          hasActive={hasWeatherFilters(value)}
-          clearLabel={t("clearWeather")}
-          onClear={() => patch({ dryToday: false, lightWind: false, clearSky: false })}
-        >
-          {weatherRows}
-        </FilterSubmenu>
+        {features.weather ? (
+          <FilterSubmenu
+            label={t("filterWeatherToday")}
+            hasActive={hasWeatherFilters(value)}
+            clearLabel={t("clearWeather")}
+            onClear={() => patch({ dryToday: false, lightWind: false, clearSky: false })}
+          >
+            {weatherRows}
+          </FilterSubmenu>
+        ) : null}
 
-        <FilterSubmenu
-          label={t("filterSurface")}
-          hasActive={value.beachSurfaces.length > 0}
-          clearLabel={t("clearSurface")}
-          onClear={() => patch({ beachSurfaces: [] })}
-        >
-          {surfaceRows}
-        </FilterSubmenu>
+        {features.beachAttributes ? (
+          <FilterSubmenu
+            label={t("filterSurface")}
+            hasActive={value.beachSurfaces.length > 0}
+            clearLabel={t("clearSurface")}
+            onClear={() => patch({ beachSurfaces: [] })}
+          >
+            {surfaceRows}
+          </FilterSubmenu>
+        ) : null}
 
         <FilterSubmenu
           label={t("filterRegionMenu")}

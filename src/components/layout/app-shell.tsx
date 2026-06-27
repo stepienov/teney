@@ -1,13 +1,15 @@
 "use client";
 
-import { Home, Menu, Waves } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { AppBrandLink } from "@/components/layout/app-brand-link";
+import { AppNavLinks } from "@/components/layout/app-nav-links";
 import {
   APP_SIDEBAR_WIDTH_CLASS,
   AppSidebar,
+  appNavItems,
 } from "@/components/layout/app-sidebar";
 import { LocaleSwitcherCompact } from "@/components/locale/locale-switcher-compact";
 import { Button } from "@/components/ui/button";
@@ -18,20 +20,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Link, usePathname } from "@/i18n/routing";
+import { usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
-
-const mobileNavItems = [
-  { href: "/", labelKey: "home" as const, icon: Home },
-  { href: "/beaches", labelKey: "beaches" as const, icon: Waves },
-] as const;
-
-function isNavActive(pathname: string, href: string): boolean {
-  if (href === "/") {
-    return pathname === "/";
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -78,27 +68,17 @@ export function AppShell({ children }: AppShellProps) {
                     Teney
                   </SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col gap-0.5 p-2.5" aria-label={t("mainNav")}>
-                  {mobileNavItems.map((item) => {
-                    const active = isNavActive(pathname, item.href);
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={cn(
-                          "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium",
-                          active
-                            ? "bg-brand-muted text-brand"
-                            : "text-muted-foreground hover:bg-white",
-                        )}
-                      >
-                        <Icon className="size-4" aria-hidden />
-                        {t(item.labelKey)}
-                      </Link>
-                    );
-                  })}
+                <nav
+                  className="flex flex-col gap-0.5 p-2.5"
+                  aria-label={t("mainNav")}
+                >
+                  <AppNavLinks
+                    items={appNavItems}
+                    pathname={pathname}
+                    getLabel={(key) => t(key)}
+                    onNavigate={() => setMobileOpen(false)}
+                    inactiveClassName="text-muted-foreground hover:bg-white"
+                  />
                 </nav>
               </SheetContent>
             </Sheet>
@@ -116,7 +96,9 @@ export function AppShell({ children }: AppShellProps) {
           <AppSidebar />
         </div>
 
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white">{children}</div>
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white">
+          {children}
+        </div>
       </div>
     </div>
   );

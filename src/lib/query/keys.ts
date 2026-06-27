@@ -3,6 +3,7 @@ import type { UserCoords } from "@/hooks/use-geolocation";
 /** POI list categories — extend when adding new explorers. */
 export const POI_CATEGORY = {
   beaches: "beaches",
+  miradores: "miradores",
 } as const;
 
 export type PoiCategory = (typeof POI_CATEGORY)[keyof typeof POI_CATEGORY];
@@ -45,6 +46,21 @@ export function poiInfiniteSearchQueryKey(
 
 export function poiFiltersQueryKey(category: PoiCategory) {
   return ["poi", category, "filters"] as const;
+}
+
+export function poiMapSearchQueryKey(
+  category: PoiCategory,
+  params: unknown,
+  nearMe: boolean,
+  userCoords: UserCoords | undefined,
+) {
+  return [
+    "poi",
+    category,
+    "map-all",
+    params,
+    nearMe ? geoCoordsKey(userCoords) : null,
+  ] as const;
 }
 
 /** Round coords so tiny GPS jitter does not invalidate cache keys. */

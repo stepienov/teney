@@ -10,3 +10,11 @@ export function getPublicApiBaseUrl(): string {
   }
   return raw.replace(/\/+$/, "");
 }
+
+export function getPublicGoogleClientId(): string | undefined {
+  const raw = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  if (raw == null || raw.trim() === "") {
+    return undefined;
+  }
+  return raw.trim();
+}

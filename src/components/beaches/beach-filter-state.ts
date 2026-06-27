@@ -105,6 +105,17 @@ export function hasBeachFilters(value: BeachFilterState): boolean {
   );
 }
 
+export function hasExplorerFilters(
+  value: BeachFilterState,
+  features: { weather: boolean; beachAttributes: boolean },
+): boolean {
+  return (
+    hasGeoFilters(value) ||
+    (features.beachAttributes && hasAttributeFilters(value)) ||
+    (features.weather && hasWeatherFilters(value))
+  );
+}
+
 export function hasActiveFilters(value: BeachFilterState): boolean {
   return (
     Boolean(value.name.trim()) ||

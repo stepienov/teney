@@ -5,6 +5,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { AppShell } from "@/components/layout/app-shell";
 import { AppProviders } from "@/components/providers/app-providers";
 import { type AppLocale, routing } from "@/i18n/routing";
+import { getPublicGoogleClientId } from "@/lib/env";
 
 type Props = {
   children: React.ReactNode;
@@ -32,10 +33,11 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   setRequestLocale(locale);
   const messages = await getMessages();
+  const googleClientId = getPublicGoogleClientId();
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <AppProviders>
+      <AppProviders googleClientId={googleClientId}>
         <AppShell>{children}</AppShell>
       </AppProviders>
     </NextIntlClientProvider>

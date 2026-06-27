@@ -5,6 +5,7 @@ import { BeachTableRow } from "@/components/beaches/beach-table-row";
 import type { BeachFilterState } from "@/components/beaches/beach-filter-state";
 import { resolveBeachDistanceKm } from "@/lib/beach-distance";
 import type { UserCoords } from "@/hooks/use-geolocation";
+import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
 import type { PoiDto } from "@/lib/types/poi";
 
 type BeachResultsTableProps = {
@@ -22,7 +23,8 @@ export function BeachResultsTable({
   filterState,
   onFilterPatch,
 }: BeachResultsTableProps) {
-  const t = useTranslations("beaches");
+  const { messagesNamespace, features } = usePoiCategoryConfig();
+  const t = useTranslations(messagesNamespace);
 
   return (
     <>
@@ -33,6 +35,7 @@ export function BeachResultsTable({
             beach={beach}
             distanceKm={resolveBeachDistanceKm(beach, distancesKm, userCoords)}
             showDivider={index < beaches.length - 1}
+            isFirst={index === 0}
           />
         ))}
       </ul>
@@ -44,12 +47,16 @@ export function BeachResultsTable({
               <th className="w-[19%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("colName")}
               </th>
-              <th className="hidden w-[22%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:table-cell">
-                {t("colWeather")}
-              </th>
-              <th className="w-[40%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {t("colAttributes")}
-              </th>
+              {features.weather ? (
+                <th className="hidden w-[22%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground md:table-cell">
+                  {t("colWeather")}
+                </th>
+              ) : null}
+              {features.beachAttributes ? (
+                <th className="w-[40%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("colAttributes")}
+                </th>
+              ) : null}
               <th className="w-[16%] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("colRegion")}
               </th>

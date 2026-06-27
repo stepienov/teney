@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
 import {
   addRecentBeachSearch,
   useRecentBeachSearches,
@@ -53,7 +54,8 @@ function BeachNameSearchDesktop({
   value,
   onSubmit,
 }: Omit<BeachNameSearchProps, "variant">) {
-  const t = useTranslations("beaches");
+  const { messagesNamespace } = usePoiCategoryConfig();
+  const t = useTranslations(messagesNamespace);
   const [draft, setDraft] = useState(value);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -92,7 +94,8 @@ function BeachNameSearchMobile({
   value,
   onSubmit,
 }: Omit<BeachNameSearchProps, "variant">) {
-  const t = useTranslations("beaches");
+  const { messagesNamespace } = usePoiCategoryConfig();
+  const t = useTranslations(messagesNamespace);
   const [draft, setDraft] = useState(value);
   const [recentOpen, setRecentOpen] = useState(false);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

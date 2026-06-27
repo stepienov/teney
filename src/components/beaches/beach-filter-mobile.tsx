@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, List, X } from "lucide-react";
+import { LayoutGrid, List, Map, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
@@ -9,10 +9,11 @@ import { BeachNameSearch } from "@/components/beaches/beach-name-search";
 import { BeachWeatherFilterChips } from "@/components/beaches/beach-weather-filter-chips";
 import {
   clearBeachFilters,
-  hasBeachFilters,
+  hasExplorerFilters,
   type BeachFilterState,
 } from "@/components/beaches/beach-filter-state";
 import { FilterOptionRow } from "@/components/beaches/filter-menu";
+import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { useBottomSheetSwipeDismiss } from "@/hooks/use-bottom-sheet-swipe-dismiss";
 import { uniqueRegions } from "@/lib/api/reference";
+import type { BeachViewMode } from "@/lib/beach-view-mode";
 import type { MunicipalityRef } from "@/lib/types/poi";
 import { cn } from "@/lib/utils";
 
@@ -31,8 +33,8 @@ type BeachFilterMobileProps = {
   value: BeachFilterState;
   municipalities: MunicipalityRef[];
   locationSortActive: boolean;
-  viewMode: "list" | "grid";
-  onViewModeChange: (mode: "list" | "grid") => void;
+  viewMode: BeachViewMode;
+  onViewModeChange: (mode: BeachViewMode) => void;
   onApply: (next: BeachFilterState) => void;
   onSortChange: (sort: string) => void;
 };
@@ -64,7 +66,8 @@ export function BeachFilterMobile({
   onApply,
   onSortChange,
 }: BeachFilterMobileProps) {
-  const t = useTranslations("beaches");
+  const { messagesNamespace, features } = usePoiCategoryConfig();
+  const t = useTranslations(messagesNamespace);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sheetDraft, setSheetDraft] = useState(value);
@@ -131,8 +134,12 @@ export function BeachFilterMobile({
   }
 
   const sortOptions = [
-    { value: "weather.tempMax", label: t("sortWarmest") },
-    { value: "weather.windSpeed", label: t("sortLightestWind") },
+    ...(features.weather
+      ? [
+          { value: "weather.tempMax", label: t("sortWarmest") },
+          { value: "weather.windSpeed", label: t("sortLightestWind") },
+        ]
+      : []),
     { value: "location", label: t("sortNearest") },
     { value: "name", label: t("sortName") },
   ] as const;
@@ -160,11 +167,14 @@ export function BeachFilterMobile({
   const filterSwipe = useBottomSheetSwipeDismiss(() => handleFilterOpenChange(false));
   const sortSwipe = useBottomSheetSwipeDismiss(() => setSortOpen(false));
 
-  const filtersActive = hasBeachFilters(filterOpen ? sheetDraft : value);
+  const filtersActive = hasExplorerFilters(
+    filterOpen ? sheetDraft : value,
+    features,
+  );
   const sortValue = locationSortActive ? "location" : value.sort;
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 border-b border-border bg-white sm:hidden">
+    <div className="sticky top-0 z-30 -mx-4 bg-white sm:hidden">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h1 className="min-w-0 text-base font-bold tracking-wide text-foreground">
           {t("pageTitle")}
@@ -201,6 +211,20 @@ export function BeachFilterMobile({
             onClick={() => onViewModeChange("grid")}
           >
             <LayoutGrid className="size-4" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn(
+              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              viewMode === "map" && "border-brand/50 bg-brand-muted text-brand",
+            )}
+            aria-pressed={viewMode === "map"}
+            aria-label={t("viewMap")}
+            onClick={() => onViewModeChange("map")}
+          >
+            <Map className="size-4" aria-hidden />
           </Button>
         </div>
       </div>
@@ -267,11 +291,13 @@ export function BeachFilterMobile({
         </button>
       </div>
 
-      <div className="border-b border-border px-4 py-2.5">
-        <BeachWeatherFilterChips
-          value={value}
-          onApply={patchFromHeader}
-        />
+      <div className="px-4 py-2.5">
+        {features.weather ? (
+          <BeachWeatherFilterChips
+            value={value}
+            onApply={patchFromHeader}
+          />
+        ) : null}
       </div>
 
       <Sheet open={filterOpen} onOpenChange={handleFilterOpenChange}>

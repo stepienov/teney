@@ -11,10 +11,12 @@ import {
   POI_CATEGORY,
   poiFiltersQueryKey,
   poiInfiniteSearchQueryKey,
+  poiMapSearchQueryKey,
   poiSearchQueryKey,
   referenceQueryKeys,
 } from "@/lib/query/keys";
 import type { UserCoords } from "@/hooks/use-geolocation";
+import type { PoiDto } from "@/lib/types/poi";
 
 export type BeachSearchParams = {
   locale: string;
@@ -40,6 +42,9 @@ export type BeachSearchParams = {
 };
 
 export type BeachSearchBaseParams = Omit<BeachSearchParams, "page" | "pageSize">;
+
+/** API max page size — used when loading all beaches for the map. */
+const MAP_SEARCH_PAGE_SIZE = 100;
 
 /** @deprecated Use poiFiltersQueryKey(POI_CATEGORY.beaches). */
 export const beachFiltersQueryKey = poiFiltersQueryKey(POI_CATEGORY.beaches);
@@ -71,6 +76,33 @@ function toSearchBeachesArgs(
     lightWind: params.lightWind,
     clearSky: params.clearSky,
   };
+}
+
+async function fetchAllBeachesForMap(
+  params: BeachSearchBaseParams,
+  userCoords: UserCoords | undefined,
+): Promise<PoiDto[]> {
+  const beaches: PoiDto[] = [];
+  let pageNum = 0;
+
+  while (true) {
+    const page = await searchBeaches(
+      toSearchBeachesArgs(
+        { ...params, page: pageNum, pageSize: MAP_SEARCH_PAGE_SIZE },
+        userCoords,
+      ),
+    );
+
+    beaches.push(...page.content);
+
+    if (page.last || page.empty) {
+      break;
+    }
+
+    pageNum += 1;
+  }
+
+  return beaches;
 }
 
 export function beachFiltersQueryOptions() {
@@ -135,6 +167,26 @@ export function beachSearchInfiniteQueryOptions(
     staleTime: CACHE_POLICY.poiSearch.staleTime,
     gcTime: CACHE_POLICY.poiSearch.gcTime,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function beachMapSearchQueryOptions(
+  params: BeachSearchBaseParams,
+  userCoords: UserCoords | undefined,
+) {
+  const nearMe = params.nearMe === true;
+
+  return queryOptions({
+    queryKey: poiMapSearchQueryKey(
+      POI_CATEGORY.beaches,
+      params,
+      nearMe,
+      userCoords,
+    ),
+    queryFn: () => fetchAllBeachesForMap(params, userCoords),
+    enabled: !nearMe || userCoords != null,
+    staleTime: CACHE_POLICY.poiSearch.staleTime,
+    gcTime: CACHE_POLICY.poiSearch.gcTime,
   });
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, Map } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
@@ -10,7 +10,7 @@ import { BeachFilterPanel } from "@/components/beaches/beach-filter-panel";
 import { BeachWeatherFilterChips } from "@/components/beaches/beach-weather-filter-chips";
 import {
   clearBeachFilters,
-  hasBeachFilters,
+  hasExplorerFilters,
   type BeachFilterState,
 } from "@/components/beaches/beach-filter-state";
 import {
@@ -18,8 +18,10 @@ import {
   FilterOptionRow,
   SortMenu,
 } from "@/components/beaches/filter-menu";
+import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
 import { Button } from "@/components/ui/button";
 import { uniqueRegions } from "@/lib/api/reference";
+import type { BeachViewMode } from "@/lib/beach-view-mode";
 import type { MunicipalityRef } from "@/lib/types/poi";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +29,8 @@ type BeachFilterBarProps = {
   value: BeachFilterState;
   municipalities: MunicipalityRef[];
   locationSortActive: boolean;
-  viewMode: "list" | "grid";
-  onViewModeChange: (mode: "list" | "grid") => void;
+  viewMode: BeachViewMode;
+  onViewModeChange: (mode: BeachViewMode) => void;
   onApply: (next: BeachFilterState) => void;
   onSortChange: (sort: string) => void;
 };
@@ -42,10 +44,11 @@ export function BeachFilterBar({
   onApply,
   onSortChange,
 }: BeachFilterBarProps) {
-  const t = useTranslations("beaches");
+  const { messagesNamespace, features } = usePoiCategoryConfig();
+  const t = useTranslations(messagesNamespace);
   const regions = useMemo(() => uniqueRegions(municipalities), [municipalities]);
 
-  const filtersActive = hasBeachFilters(value);
+  const filtersActive = hasExplorerFilters(value, features);
   const sortValue = locationSortActive ? "location" : value.sort;
 
   function patch(next: BeachFilterState) {
@@ -53,8 +56,12 @@ export function BeachFilterBar({
   }
 
   const sortOptions = [
-    { value: "weather.tempMax", label: t("sortWarmest") },
-    { value: "weather.windSpeed", label: t("sortLightestWind") },
+    ...(features.weather
+      ? [
+          { value: "weather.tempMax", label: t("sortWarmest") },
+          { value: "weather.windSpeed", label: t("sortLightestWind") },
+        ]
+      : []),
     { value: "location", label: t("sortNearest") },
     { value: "name", label: t("sortName") },
   ] as const;
@@ -137,11 +144,27 @@ export function BeachFilterBar({
           >
             <LayoutGrid className="size-4" aria-hidden />
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn(
+              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              viewMode === "map" && "border-brand/50 bg-brand-muted text-brand",
+            )}
+            aria-pressed={viewMode === "map"}
+            aria-label={t("viewMap")}
+            onClick={() => onViewModeChange("map")}
+          >
+            <Map className="size-4" aria-hidden />
+          </Button>
         </div>
       </div>
 
       <div className="mb-4 hidden sm:block">
-        <BeachWeatherFilterChips value={value} onApply={onApply} />
+        {features.weather ? (
+          <BeachWeatherFilterChips value={value} onApply={onApply} />
+        ) : null}
       </div>
     </>
   );
