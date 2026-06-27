@@ -41,6 +41,7 @@ declare global {
             callback: (response: { credential: string }) => void;
             auto_select?: boolean;
             cancel_on_tap_outside?: boolean;
+            use_fedcm_for_prompt?: boolean;
           }) => void;
           prompt: (
             momentListener?: (notification: {
@@ -91,9 +92,18 @@ export function GoogleIdentityProvider({
       return;
     }
 
-    if (ensureGoogleIdentityInitialized(clientId)) {
-      setGsiReady(true);
-    }
+    const tryInit = (attempt = 0) => {
+      if (ensureGoogleIdentityInitialized(clientId)) {
+        setGsiReady(true);
+        return;
+      }
+
+      if (attempt < 20) {
+        window.setTimeout(() => tryInit(attempt + 1), 50);
+      }
+    };
+
+    tryInit();
   }, [clientId]);
 
   if (!clientId) {

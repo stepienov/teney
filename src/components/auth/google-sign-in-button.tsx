@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-import {
-  useOptionalGoogleIdentity,
-} from "@/components/auth/google-identity-provider";
+import { useOptionalGoogleIdentity } from "@/components/auth/google-identity-provider";
 import { GoogleLogo } from "@/components/auth/google-logo";
-import { Button } from "@/components/ui/button";
+import { renderGoogleSignInButton } from "@/lib/auth/google-gsi";
 import { cn } from "@/lib/utils";
 
 type GoogleSignInButtonProps = {
@@ -17,8 +15,8 @@ type GoogleSignInButtonProps = {
 };
 
 /**
- * Visible "Google" button (login + register in one step via id token → POST /api/auth/oauth/google).
- * Uses Google Identity Services under the hood; official button is hidden and triggered on click.
+ * Custom Google look with the real Google sign-in button as a full-size transparent
+ * overlay — the user clicks Google's own control (not a synthetic .click()).
  */
 export function GoogleSignInButton({
   clientId: clientIdProp,
@@ -26,58 +24,71 @@ export function GoogleSignInButton({
   label,
   className,
 }: GoogleSignInButtonProps) {
-  const hiddenRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const gsi = useOptionalGoogleIdentity();
   const clientId = clientIdProp ?? gsi?.clientId;
   const gsiReady = gsi?.gsiReady ?? false;
+  const inactive = disabled || !gsiReady;
 
-  useEffect(() => {
-    if (!gsiReady || !hiddenRef.current || !window.google?.accounts?.id) {
+  const mountGoogleOverlay = useCallback(() => {
+    const container = overlayRef.current;
+    if (!container || !gsiReady || disabled) {
       return;
     }
 
-    hiddenRef.current.innerHTML = "";
-    window.google.accounts.id.renderButton(hiddenRef.current, {
+    const width = Math.max(container.offsetWidth, 240);
+    container.innerHTML = "";
+    window.google?.accounts?.id?.renderButton(container, {
       type: "standard",
       theme: "outline",
       size: "large",
       text: "signin_with",
-      width: 400,
+      width,
     });
-  }, [gsiReady]);
+  }, [disabled, gsiReady]);
 
-  function handleClick() {
-    const googleBtn = hiddenRef.current?.querySelector(
-      '[role="button"]',
-    ) as HTMLElement | null;
-    googleBtn?.click();
-  }
+  useEffect(() => {
+    mountGoogleOverlay();
+  }, [mountGoogleOverlay]);
+
+  useEffect(() => {
+    const container = overlayRef.current;
+    if (!container || !gsiReady || disabled) {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      mountGoogleOverlay();
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [disabled, gsiReady, mountGoogleOverlay]);
 
   if (!clientId) {
     return null;
   }
 
   return (
-    <>
+    <div className={cn("relative h-10 w-full", className)}>
       <div
-        ref={hiddenRef}
-        className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
-        aria-hidden
-      />
-      <Button
-        type="button"
-        variant="outline"
-        disabled={disabled || !gsiReady}
-        onClick={handleClick}
         className={cn(
-          "h-10 w-full gap-2.5 border-border bg-white text-sm font-medium text-foreground shadow-xs hover:bg-muted/40",
-          className,
+          "pointer-events-none flex h-full w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-white text-sm font-medium text-foreground shadow-xs",
+          inactive && "opacity-50",
         )}
-        aria-label={label}
+        aria-hidden
       >
         <GoogleLogo className="size-5 shrink-0" />
         Google
-      </Button>
-    </>
+      </div>
+
+      <div
+        ref={overlayRef}
+        className={cn(
+          "absolute inset-0 z-10 overflow-hidden opacity-[0.011] [&_div]:!h-full [&_div]:!w-full [&_iframe]:!h-full [&_iframe]:!min-h-10 [&_iframe]:!w-full",
+          inactive && "pointer-events-none",
+        )}
+        aria-label={label}
+      />
+    </div>
   );
 }

@@ -12,7 +12,6 @@ import { useRouter } from "@/i18n/routing";
 import type { AppLocale } from "@/i18n/routing";
 import { ApiError } from "@/lib/api-client";
 import {
-  cancelGoogleOneTap,
   promptGoogleOneTapOnce,
   resetGoogleOneTapSession,
 } from "@/lib/auth/google-gsi";
@@ -78,23 +77,12 @@ export function GoogleOneTap() {
   }, [status]);
 
   useEffect(() => {
-    if (status === "authenticated") {
-      cancelGoogleOneTap();
-      return;
-    }
-
     if (status !== "unauthenticated" || !gsi?.gsiReady) {
       return;
     }
 
     promptGoogleOneTapOnce();
   }, [gsi?.gsiReady, status]);
-
-  useEffect(() => {
-    return () => {
-      cancelGoogleOneTap();
-    };
-  }, []);
 
   return null;
 }
