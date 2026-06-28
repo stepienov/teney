@@ -5,11 +5,10 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { AppBrandLink } from "@/components/layout/app-brand-link";
-import { AppNavLinks } from "@/components/layout/app-nav-links";
+import { AppNestedNav } from "@/components/layout/app-nested-nav";
 import {
   APP_SIDEBAR_WIDTH_CLASS,
   AppSidebar,
-  appNavItems,
 } from "@/components/layout/app-sidebar";
 import { LocaleSwitcherCompact } from "@/components/locale/locale-switcher-compact";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
 type AppShellProps = {
@@ -29,7 +27,6 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const t = useTranslations("shell");
-  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -69,16 +66,10 @@ export function AppShell({ children }: AppShellProps) {
                   </SheetTitle>
                 </SheetHeader>
                 <nav
-                  className="flex flex-col gap-0.5 p-2.5"
+                  className="flex flex-col gap-0.5 overflow-y-auto p-2.5"
                   aria-label={t("mainNav")}
                 >
-                  <AppNavLinks
-                    items={appNavItems}
-                    pathname={pathname}
-                    getLabel={(key) => t(key)}
-                    onNavigate={() => setMobileOpen(false)}
-                    inactiveClassName="text-muted-foreground hover:bg-white"
-                  />
+                  <AppNestedNav onNavigate={() => setMobileOpen(false)} />
                 </nav>
               </SheetContent>
             </Sheet>

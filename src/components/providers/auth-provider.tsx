@@ -30,7 +30,9 @@ import {
   removeFavorite,
 } from "@/lib/api/user-me";
 import { getStoredRefreshToken } from "@/lib/auth/storage";
+import { inviteQueryKeys } from "@/lib/query/invites";
 import { userQueryKeys } from "@/lib/query/user";
+import { listQueryKeys } from "@/lib/query/lists";
 import type {
   AuthSession,
   LoginRequest,
@@ -81,6 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const ids = await loadFavoriteIds(locale);
         setFavoriteIds(ids);
         queryClient.setQueryData(userQueryKeys.favoriteIds(locale), ids);
+        void queryClient.invalidateQueries({ queryKey: listQueryKeys.all });
+        void queryClient.invalidateQueries({ queryKey: inviteQueryKeys.all });
       } catch {
         setFavoriteIds(new Set());
       }
@@ -94,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setFavoriteIds(new Set());
     setStatus("unauthenticated");
     queryClient.removeQueries({ queryKey: ["user"] });
+    queryClient.removeQueries({ queryKey: inviteQueryKeys.all });
   }, [queryClient]);
 
   const refreshSession = useCallback(async (): Promise<AuthSession | null> => {

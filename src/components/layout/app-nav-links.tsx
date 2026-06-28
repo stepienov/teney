@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export type AppNavItem = {
   href: string;
-  labelKey: "home" | "beaches" | "miradores" | "account";
+  labelKey: "home" | "beaches" | "miradores" | "lists" | "friends" | "account";
   icon: LucideIcon;
 };
 

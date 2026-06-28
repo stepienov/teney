@@ -8,10 +8,13 @@ import {
   useOptionalGoogleIdentity,
 } from "@/components/auth/google-identity-provider";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useRouter } from "@/i18n/routing";
-import type { AppLocale } from "@/i18n/routing";
+import { useAuthOperationLoading } from "@/components/providers/auth-operation-loading";
+import { useNavigationRouter } from "@/components/providers/navigation-loading";
+import { usePathname } from "@/i18n/routing";
+import { locales, type AppLocale } from "@/i18n/routing";
 import { ApiError } from "@/lib/api-client";
 import {
+  cancelGoogleOneTap,
   promptGoogleOneTapOnce,
   resetGoogleOneTapSession,
 } from "@/lib/auth/google-gsi";
@@ -27,8 +30,9 @@ import {
  */
 export function GoogleAuthCredentialBridge() {
   const { status, loginWithGoogle } = useAuth();
-  const router = useRouter();
+  const router = useNavigationRouter();
   const locale = useLocale();
+  const { startAuthOperation, stopAuthOperation } = useAuthOperationLoading();
 
   const handleCredential = useCallback(
     async (idToken: string) => {
@@ -36,6 +40,7 @@ export function GoogleAuthCredentialBridge() {
         return;
       }
 
+      startAuthOperation("google");
       try {
         await loginWithGoogle(idToken, {
           preferredLocale: detectBrowserAppLocale(locale as AppLocale),
@@ -43,12 +48,20 @@ export function GoogleAuthCredentialBridge() {
         });
         router.push(consumeAuthReturnPath("/"));
       } catch (error) {
+        stopAuthOperation();
         if (error instanceof ApiError) {
           console.error("Google sign-in failed", error.status);
         }
       }
     },
-    [locale, loginWithGoogle, router, status],
+    [
+      locale,
+      loginWithGoogle,
+      router,
+      startAuthOperation,
+      status,
+      stopAuthOperation,
+    ],
   );
 
   useRegisterGoogleDefaultCredentialHandler(
@@ -61,10 +74,16 @@ export function GoogleAuthCredentialBridge() {
 /**
  * Shows Google One Tap for guests (not on login/register pages).
  */
+function isLocaleHomePath(pathname: string): boolean {
+  return locales.some((locale) => pathname === `/${locale}`);
+}
+
 export function GoogleOneTap() {
   const { status } = useAuth();
   const gsi = useOptionalGoogleIdentity();
+  const pathname = usePathname();
   const prevStatusRef = useRef(status);
+  const isHomePage = isLocaleHomePath(pathname);
 
   useEffect(() => {
     if (
@@ -77,12 +96,20 @@ export function GoogleOneTap() {
   }, [status]);
 
   useEffect(() => {
-    if (status !== "unauthenticated" || !gsi?.gsiReady) {
+    if (
+      !isHomePage ||
+      status !== "unauthenticated" ||
+      !gsi?.gsiReady
+    ) {
       return;
     }
 
-    promptGoogleOneTapOnce();
-  }, [gsi?.gsiReady, status]);
+    promptGoogleOneTapOnce({ delayMs: 500 });
+
+    return () => {
+      cancelGoogleOneTap();
+    };
+  }, [gsi?.gsiReady, isHomePage, pathname, status]);
 
   return null;
 }

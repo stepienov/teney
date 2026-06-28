@@ -4,6 +4,7 @@ import { BeachCardDesktopName } from "@/components/beaches/beach-card-desktop-na
 import { BeachCardWeatherPanel } from "@/components/beaches/beach-card-weather-panel";
 import { BeachDistanceBadge } from "@/components/beaches/beach-attribute-badges";
 import { BeachFavoriteButton } from "@/components/auth/beach-favorite-button";
+import { AddToListButton } from "@/components/lists/add-to-list-button";
 import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
 import { Link } from "@/i18n/routing";
 import type { PoiDto } from "@/lib/types/poi";
@@ -94,7 +95,8 @@ export function BeachCard({
               </div>
             )}
           </Link>
-          <span className="absolute top-2 right-2 z-10">
+          <span className="absolute top-2 right-2 z-10 flex gap-1">
+            <AddToListButton poiId={beach.id} size="sm" />
             <BeachFavoriteButton poiId={beach.id} size="sm" />
           </span>
         </div>
@@ -121,7 +123,8 @@ export function BeachCard({
               {photoContent}
               {photoOverlay}
             </Link>
-            <span className="absolute top-2 right-2 z-10">
+            <span className="absolute top-2 right-2 z-10 flex gap-1">
+              <AddToListButton poiId={beach.id} size="sm" />
               <BeachFavoriteButton poiId={beach.id} size="sm" />
             </span>
           </div>
@@ -166,7 +169,8 @@ export function BeachCard({
               {photoContent}
               {photoOverlay}
             </Link>
-            <span className="absolute top-2 right-2 z-10">
+            <span className="absolute top-2 right-2 z-10 flex gap-1">
+              <AddToListButton poiId={beach.id} size="sm" />
               <BeachFavoriteButton poiId={beach.id} size="sm" />
             </span>
           </div>

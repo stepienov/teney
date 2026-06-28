@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronRight, X } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -112,21 +112,12 @@ function FilterToggleSwitch({
   readOnly?: boolean;
 }) {
   const compact = size === "sm";
-  const [displayChecked, setDisplayChecked] = useState(checked);
-
-  useEffect(() => {
-    if (!readOnly) {
-      setDisplayChecked(checked);
-    }
-  }, [checked, readOnly]);
-
-  const shown = readOnly ? checked : displayChecked;
 
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={shown}
+      aria-checked={checked}
       aria-label={label}
       tabIndex={readOnly ? -1 : undefined}
       onClick={
@@ -134,23 +125,21 @@ function FilterToggleSwitch({
           ? undefined
           : (event) => {
               event.stopPropagation();
-              const next = !displayChecked;
-              setDisplayChecked(next);
-              onChange(next);
+              onChange(!checked);
             }
       }
       className={cn(
         "relative inline-flex shrink-0 items-center rounded-full transition-colors duration-150",
         readOnly ? "pointer-events-none" : "cursor-pointer",
         compact ? "h-[1.125rem] w-8" : "h-6 w-11",
-        shown ? "bg-brand" : "bg-neutral-300",
+        checked ? "bg-brand" : "bg-neutral-300",
       )}
     >
       <span
         className={cn(
           "pointer-events-none inline-block rounded-full bg-white transition-transform duration-150",
           compact ? "size-3.5 shadow-sm" : "size-5 shadow-sm",
-          shown
+          checked
             ? compact
               ? "translate-x-[1.125rem]"
               : "translate-x-[1.375rem]"
@@ -161,7 +150,7 @@ function FilterToggleSwitch({
   );
 }
 
-function MobileFilterSwitchRow({
+function MobileFilterSwitchRowInner({
   checked,
   label,
   onChange,
@@ -171,10 +160,6 @@ function MobileFilterSwitchRow({
   onChange: (checked: boolean) => void;
 }) {
   const [localChecked, setLocalChecked] = useState(checked);
-
-  useEffect(() => {
-    setLocalChecked(checked);
-  }, [checked]);
 
   function toggle() {
     const next = !localChecked;
@@ -207,6 +192,25 @@ function MobileFilterSwitchRow({
         readOnly
       />
     </div>
+  );
+}
+
+function MobileFilterSwitchRow({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <MobileFilterSwitchRowInner
+      key={String(checked)}
+      checked={checked}
+      label={label}
+      onChange={onChange}
+    />
   );
 }
 
