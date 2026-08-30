@@ -128,6 +128,25 @@ export async function authPut(path: string): Promise<void> {
   await authJson<void>(path, { method: "PUT" });
 }
 
+export async function authPutJson<T>(path: string, body: unknown): Promise<T> {
+  return authJson<T>(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function authPostVoid(
+  path: string,
+  body?: unknown,
+): Promise<void> {
+  await authJson<void>(path, {
+    method: "POST",
+    headers: body != null ? { "Content-Type": "application/json" } : undefined,
+    body: body != null ? JSON.stringify(body) : undefined,
+  });
+}
+
 export async function authDelete(path: string): Promise<void> {
   await authJson<void>(path, { method: "DELETE" });
 }

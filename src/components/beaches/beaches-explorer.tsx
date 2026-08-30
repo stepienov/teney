@@ -42,6 +42,10 @@ import {
 } from "@/lib/beach-pagination";
 import { BEACH_VIEW_MODES } from "@/lib/beach-view-mode";
 import type { PoiCategoryExplorerConfig, PoiSearchPage } from "@/lib/poi-categories/types";
+import {
+  isDescDefaultCatalogSort,
+  normalizeCatalogSortParam,
+} from "@/lib/poi-sort";
 import type { MunicipalityRef, PoiDto } from "@/lib/types/poi";
 import { cn } from "@/lib/utils";
 
@@ -104,28 +108,21 @@ function parseRadiusKm(value: string | null): number {
   return Math.min(100, Math.max(5, Math.round(parsed / 5) * 5));
 }
 
-function normalizeSortParam(sort: string | null, defaultSort: string): string {
-  const value = sort ?? defaultSort;
-  if (value === "municipality.name" || value === "region.name") {
-    return "name";
-  }
-  if (value === "windSpeed" || value === "wind") {
-    return "weather.windSpeed";
-  }
-  return value;
-}
-
 function parseFiltersFromParams(
   params: URLSearchParams,
   config: PoiCategoryExplorerConfig,
 ): AppliedBeachFilters {
+  const sort = normalizeCatalogSortParam(params.get("sort"), config.defaultSort);
+  const dirParam = params.get("dir");
+  const defaultDesc = isDescDefaultCatalogSort(sort, config.features.weather);
+
   return {
     name: params.get("q") ?? "",
     regionIds: parseIdList(params.get("regions"), params.get("region")),
-    sort: normalizeSortParam(params.get("sort"), config.defaultSort),
-    sortDirection: (params.get("dir") === "DESC" ? "DESC" : "ASC") as
-      | "ASC"
-      | "DESC",
+    sort,
+    sortDirection: (
+      dirParam === "DESC" || (dirParam == null && defaultDesc) ? "DESC" : "ASC"
+    ) as "ASC" | "DESC",
     hasLifeguard: params.get("lifeguard") === "1",
     hasShower: params.get("shower") === "1",
     beachSurfaces: parseIdList(params.get("surfaces"), params.get("surface")),
@@ -230,6 +227,7 @@ function PoiExplorerContent({
   applied: AppliedBeachFilters;
 }) {
   const t = useTranslations(config.messagesNamespace);
+  const tCategories = useTranslations("poiCategories");
   const locale = useLocale();
   const router = useNavigationRouter();
   const isMobile = useIsMobile();
@@ -395,8 +393,9 @@ function PoiExplorerContent({
         {
           ...getDraftFilters(applied),
           sort,
-          sortDirection:
-            config.features.weather && sort === "weather.tempMax" ? "DESC" : "ASC",
+          sortDirection: isDescDefaultCatalogSort(sort, config.features.weather)
+              ? "DESC"
+              : "ASC",
         },
         0,
         false,
@@ -489,13 +488,13 @@ function PoiExplorerContent({
       className={cn(
         "px-4 pt-0 pb-6 sm:px-8 sm:pt-8",
         mapMode
-          ? "flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden sm:pb-4"
+          ? "flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden sm:h-dvh sm:pb-4"
           : "sm:pb-8",
       )}
     >
       <header className="mb-6 hidden shrink-0 sm:block">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {t("pageTitle")}
+          {config.listTitleKey ? tCategories(config.listTitleKey) : t("pageTitle")}
         </h1>
       </header>
 
@@ -517,14 +516,20 @@ function PoiExplorerContent({
 
           <div
             className={cn(
-              "min-h-[12rem]",
-              mapMode && "flex min-h-0 flex-1 flex-col sm:min-h-0",
+              mapMode ? "relative min-h-[24rem] flex-1" : "min-h-[12rem]",
             )}
           >
-            {showResultsLoading ? (
-              <BeachLoadingIndicator
-                className={cn("min-h-[20rem]", mapMode && "min-h-0 flex-1")}
+            {mapMode ? (
+              <BeachMapView
+                className="absolute inset-0"
+                beaches={beaches}
+                locale={locale}
+                distancesKm={distancesKm}
+                userCoords={userCoords}
+                onRequestLocation={geo.request}
               />
+            ) : showResultsLoading ? (
+              <BeachLoadingIndicator className="min-h-[20rem]" />
             ) : isError ? (
               <p className="py-16 text-center text-sm text-destructive">
                 {t("error")}
@@ -533,15 +538,6 @@ function PoiExplorerContent({
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {t("empty")}
               </p>
-            ) : viewMode === "map" ? (
-              <BeachMapView
-                className="min-h-0 flex-1"
-                beaches={beaches}
-                locale={locale}
-                distancesKm={distancesKm}
-                userCoords={userCoords}
-                onRequestLocation={geo.request}
-              />
             ) : viewMode === "list" ? (
               <BeachResultsTable
                 beaches={beaches}

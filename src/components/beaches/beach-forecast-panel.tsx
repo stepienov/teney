@@ -27,7 +27,7 @@ type BeachForecastPanelProps = {
 };
 
 const SECTION_TITLE_CLASS =
-  "font-heading text-base font-bold text-ocean-deep sm:text-lg";
+  "font-heading text-base font-bold text-foreground sm:text-lg";
 
 function hourToDisplayWeather(hour: BeachForecastHourDto): BeachDisplayWeather {
   return {
@@ -81,7 +81,7 @@ function ForecastSlot({
     >
       <span
         className={cn(
-          "shrink-0 text-[11px] font-bold uppercase tabular-nums text-ocean-deep sm:text-xs",
+          "shrink-0 text-[11px] font-bold uppercase tabular-nums text-foreground sm:text-xs",
           labelClassName,
         )}
       >

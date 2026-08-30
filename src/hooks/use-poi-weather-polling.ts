@@ -129,8 +129,12 @@ export function usePoiWeatherBackgroundSync(
   pois: PoiDto[],
   options: PoiWeatherPollingOptions = {},
 ): void {
-  useSyncPoiWeatherFromSearch(pois);
+  const weatherPois = useMemo(
+    () => pois.filter((poi) => poi.beachDetails != null),
+    [pois],
+  );
+  useSyncPoiWeatherFromSearch(weatherPois);
 
-  const ids = useMemo(() => pois.map((poi) => poi.id), [pois]);
+  const ids = useMemo(() => weatherPois.map((poi) => poi.id), [weatherPois]);
   usePoiWeatherPolling(ids, options);
 }

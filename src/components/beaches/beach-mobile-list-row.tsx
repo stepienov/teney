@@ -1,4 +1,4 @@
-import Image from "next/image";
+"use client";
 
 import { BeachDistanceBadge } from "@/components/beaches/beach-attribute-badges";
 import { usePoiCategoryConfig } from "@/components/poi-explorer/poi-category-context";
@@ -30,20 +30,7 @@ export function BeachMobileListRow({
           isFirst ? "pt-0" : "pt-3.5",
         )}
       >
-        <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-          {beach.photoUrl ? (
-            <Image
-              src={beach.photoUrl}
-              alt=""
-              width={48}
-              height={48}
-              className="size-full object-cover"
-              unoptimized
-            />
-          ) : (
-            <PlaceholderIcon className="size-5 text-muted-foreground" aria-hidden />
-          )}
-        </span>
+        <PlaceholderIcon className="size-5 shrink-0 text-foreground/75" aria-hidden />
         <span className="min-w-0 flex-1 font-medium text-foreground">{beach.name}</span>
         {distanceKm != null && (
           <BeachDistanceBadge distanceKm={distanceKm} size="md" className="shrink-0" />

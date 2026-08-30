@@ -204,13 +204,11 @@ function badgeVariant(item: BeachBadgeItem): "default" | "paid" {
 function badgeClass(size: "sm" | "md", variant: "default" | "paid"): string {
   const sizeClass =
     size === "sm"
-      ? "h-5 rounded px-1.5 text-[10px] font-medium"
-      : "h-6 rounded-md px-2 text-xs font-medium";
+      ? "h-5 rounded px-1.5 text-[10px] font-semibold"
+      : "h-6 rounded-md px-2 text-xs font-semibold";
 
   const toneClass =
-    variant === "paid"
-      ? "bg-brand-muted text-brand"
-      : "bg-muted text-secondary-foreground";
+    variant === "paid" ? "bg-coral text-ink" : "bg-sand text-ink";
 
   return cn(
     "inline-flex items-center justify-center leading-none whitespace-nowrap",
@@ -222,11 +220,11 @@ function badgeClass(size: "sm" | "md", variant: "default" | "paid"): string {
 function distanceBadgeClass(size: "sm" | "md"): string {
   const sizeClass =
     size === "sm"
-      ? "h-5 rounded px-1.5 text-[10px] font-medium"
-      : "h-6 rounded-md px-2 text-xs font-medium";
+      ? "h-5 rounded px-1.5 text-[10px] font-semibold"
+      : "h-6 rounded-md px-2 text-xs font-semibold";
 
   return cn(
-    "inline-flex shrink-0 items-center justify-center gap-1 bg-neutral-200 text-secondary-foreground tabular-nums leading-none whitespace-nowrap",
+    "inline-flex shrink-0 items-center justify-center gap-1 bg-sand font-semibold text-ink tabular-nums leading-none whitespace-nowrap",
     distanceBadgeWidthClass,
     sizeClass,
   );

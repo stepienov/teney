@@ -72,7 +72,7 @@ export function GoogleSignInButton({
     <div className={cn("relative h-10 w-full", className)}>
       <div
         className={cn(
-          "pointer-events-none flex h-full w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-white text-sm font-medium text-foreground shadow-xs",
+          "pointer-events-none flex h-full w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-card text-sm font-medium text-foreground shadow-xs",
           inactive && "opacity-50",
         )}
         aria-hidden

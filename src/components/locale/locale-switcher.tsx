@@ -63,8 +63,8 @@ export function LocaleSwitcher({
           "inline-flex h-9 min-w-[8.5rem] items-center justify-between gap-2 rounded-full border px-3 text-sm font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           isHero
-            ? "border-white/45 bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
-            : "border-border bg-white text-ocean-deep shadow-sm hover:border-ocean-teal/50 hover:bg-ocean-mist",
+            ? "border-white/45 bg-card/15 text-white backdrop-blur-sm hover:bg-card/25"
+            : "border-border bg-card text-foreground shadow-sm hover:border-navy/40 hover:bg-muted",
         )}
       >
         <span className="flex min-w-0 items-center gap-2">
@@ -87,8 +87,8 @@ export function LocaleSwitcher({
           className={cn(
             "absolute right-0 z-50 mt-2 w-full min-w-[10.5rem] overflow-hidden rounded-2xl border p-1.5 shadow-[0_16px_40px_-12px_rgba(26,46,53,0.25)]",
             isHero
-              ? "border-white/20 bg-white text-ocean-deep"
-              : "border-border bg-white",
+              ? "border-white/20 bg-card text-foreground"
+              : "border-border bg-card",
           )}
         >
           {(Object.entries(localeLabels) as [AppLocale, string][]).map(
@@ -104,13 +104,13 @@ export function LocaleSwitcher({
                     className={cn(
                       "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
                       selected
-                        ? "bg-ocean-cyan/50 font-semibold text-ocean-deep"
-                        : "text-ocean-deep/90 hover:bg-ocean-cyan/35",
+                        ? "bg-mint/50 font-semibold text-foreground"
+                        : "text-foreground/90 hover:bg-mint/35",
                     )}
                   >
                     <span>{label}</span>
                     {selected ? (
-                      <Check className="size-4 shrink-0 text-ocean-teal" aria-hidden />
+                      <Check className="size-4 shrink-0 text-navy" aria-hidden />
                     ) : (
                       <span className="size-4 shrink-0" aria-hidden />
                     )}

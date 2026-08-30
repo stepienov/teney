@@ -63,6 +63,8 @@ export function BeachFilterBar({
         ]
       : []),
     { value: "location", label: t("sortNearest") },
+    { value: "quality", label: t("sortQuality") },
+    { value: "popularity", label: t("sortPopularity") },
     { value: "name", label: t("sortName") },
   ] as const;
 
@@ -121,7 +123,7 @@ export function BeachFilterBar({
             variant="outline"
             size="icon"
             className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              "size-9 shrink-0 rounded-md border-border bg-card shadow-sm",
               viewMode === "list" && "border-brand/50 bg-brand-muted text-brand",
             )}
             aria-pressed={viewMode === "list"}
@@ -135,7 +137,7 @@ export function BeachFilterBar({
             variant="outline"
             size="icon"
             className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              "size-9 shrink-0 rounded-md border-border bg-card shadow-sm",
               viewMode === "grid" && "border-brand/50 bg-brand-muted text-brand",
             )}
             aria-pressed={viewMode === "grid"}
@@ -149,7 +151,7 @@ export function BeachFilterBar({
             variant="outline"
             size="icon"
             className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              "size-9 shrink-0 rounded-md border-border bg-card shadow-sm",
               viewMode === "map" && "border-brand/50 bg-brand-muted text-brand",
             )}
             aria-pressed={viewMode === "map"}

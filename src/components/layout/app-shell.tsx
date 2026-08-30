@@ -4,24 +4,15 @@ import { Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { AppBrandLink } from "@/components/layout/app-brand-link";
-import { AppNavLinks } from "@/components/layout/app-nav-links";
-import {
-  APP_SIDEBAR_WIDTH_CLASS,
-  AppSidebar,
-  appNavItems,
-} from "@/components/layout/app-sidebar";
-import { LocaleSwitcherCompact } from "@/components/locale/locale-switcher-compact";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { AppSidebarPanel } from "@/components/layout/app-sidebar-panel";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { usePathname } from "@/i18n/routing";
-import { cn } from "@/lib/utils";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -29,76 +20,39 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const t = useTranslations("shell");
-  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-app-main">
-      <header className="flex h-14 shrink-0 items-center bg-brand text-brand-foreground sm:px-3">
-        <div
-          className={cn(
-            "hidden shrink-0 items-center px-3 sm:flex",
-            APP_SIDEBAR_WIDTH_CLASS,
-          )}
+    <div className="flex h-dvh min-h-0 w-full overflow-hidden bg-app-main">
+      <div className="hidden h-full shrink-0 sm:flex">
+        <AppSidebar />
+      </div>
+
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              className="fixed top-3 left-3 z-40 size-9 rounded-md border-border bg-card/90 shadow-sm backdrop-blur-sm hover:bg-muted hover:text-foreground sm:hidden"
+              aria-label={t("openMenu")}
+            />
+          }
         >
-          <AppBrandLink />
-        </div>
+          <Menu className="size-4" />
+        </SheetTrigger>
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          className="gap-0 border-border bg-app-sidebar p-0 data-[side=left]:w-[18.5rem] data-[side=left]:max-w-[18.5rem]"
+        >
+          <SheetTitle className="sr-only">{t("sidebarLabel")}</SheetTitle>
+          <AppSidebarPanel onNavigate={() => setMobileOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
-        <div className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 sm:px-0 sm:pr-3">
-          <div className="flex min-w-0 items-center gap-2 sm:hidden">
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="size-9 shrink-0 rounded-md border-brand-foreground/30 bg-white/10 text-brand-foreground hover:bg-white/20 hover:text-brand-foreground"
-                    aria-label={t("openMenu")}
-                  />
-                }
-              >
-                <Menu className="size-4" />
-              </SheetTrigger>
-              <SheetContent
-                side="left"
-                className="w-[15.5rem] border-border bg-app-sidebar p-0"
-              >
-                <SheetHeader className="border-b border-border bg-brand px-4 py-3.5 text-brand-foreground">
-                  <SheetTitle className="text-sm font-semibold text-brand-foreground">
-                    Teney
-                  </SheetTitle>
-                </SheetHeader>
-                <nav
-                  className="flex flex-col gap-0.5 p-2.5"
-                  aria-label={t("mainNav")}
-                >
-                  <AppNavLinks
-                    items={appNavItems}
-                    pathname={pathname}
-                    getLabel={(key) => t(key)}
-                    onNavigate={() => setMobileOpen(false)}
-                    inactiveClassName="text-muted-foreground hover:bg-white"
-                  />
-                </nav>
-              </SheetContent>
-            </Sheet>
-            <AppBrandLink className="min-w-0" />
-          </div>
-
-          <div className="hidden flex-1 sm:block" aria-hidden />
-
-          <LocaleSwitcherCompact tone="onBrand" />
-        </div>
-      </header>
-
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="hidden h-full shrink-0 sm:flex">
-          <AppSidebar />
-        </div>
-
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white">
-          {children}
-        </div>
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-app-main max-sm:pt-14">
+        {children}
       </div>
     </div>
   );

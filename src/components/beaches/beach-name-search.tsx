@@ -83,7 +83,7 @@ function BeachNameSearchDesktop({
             handleDraftChange(event.target.value, value, setDraft, onSubmit)
           }
           placeholder={t("searchPlaceholder")}
-          className="h-9 w-full rounded-md border border-border bg-white pr-3 pl-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 w-full rounded-md border border-border bg-card pr-3 pl-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </label>
     </form>
@@ -173,7 +173,7 @@ function BeachNameSearchMobile({
             onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder={t("searchPlaceholder")}
-            className="h-10 w-full rounded-md border border-border bg-white pr-3 pl-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-10 w-full rounded-md border border-border bg-card pr-3 pl-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </label>
         <Button
@@ -187,7 +187,7 @@ function BeachNameSearchMobile({
 
       {showRecent ? (
         <div
-          className="absolute inset-x-0 top-full z-40 mt-1 rounded-md border border-border bg-white shadow-md"
+          className="absolute inset-x-0 top-full z-40 mt-1 rounded-md border border-border bg-card shadow-md"
           onMouseDown={handleRecentMouseDown}
         >
           <p className="px-3 pt-2 text-xs font-medium text-muted-foreground">

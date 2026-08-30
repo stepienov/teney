@@ -4,6 +4,20 @@ import type { UserCoords } from "@/hooks/use-geolocation";
 export const POI_CATEGORY = {
   beaches: "beaches",
   miradores: "miradores",
+  naturalPools: "naturalPools",
+  naturalAttractions: "naturalAttractions",
+  historicalSites: "historicalSites",
+  museums: "museums",
+  wineries: "wineries",
+  familyAttractions: "familyAttractions",
+  restaurants: "restaurants",
+  kidsAttractions: "kidsAttractions",
+  waterSports: "waterSports",
+  shopping: "shopping",
+  markets: "markets",
+  recreationAreas: "recreationAreas",
+  botanicalGardens: "botanicalGardens",
+  towns: "towns",
 } as const;
 
 export type PoiCategory = (typeof POI_CATEGORY)[keyof typeof POI_CATEGORY];
@@ -46,6 +60,10 @@ export function poiInfiniteSearchQueryKey(
 
 export function poiFiltersQueryKey(category: PoiCategory) {
   return ["poi", category, "filters"] as const;
+}
+
+export function poiGooglePhotosQueryKey(id: number) {
+  return ["poi", id, "google-photos"] as const;
 }
 
 export function poiMapSearchQueryKey(

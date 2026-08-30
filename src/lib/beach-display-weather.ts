@@ -137,3 +137,21 @@ export function formatWindSpeed(
   const rounded = Math.round(windSpeed);
   return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(rounded)} km/h`;
 }
+
+/** True when the compact weather strip would show real values (not "—"). */
+export function hasRenderableBeachWeather(
+  weather: BeachDisplayWeather | null | undefined,
+): boolean {
+  if (weather == null) {
+    return false;
+  }
+
+  const hasTemp =
+    (weather.tempMin != null && Number.isFinite(weather.tempMin)) ||
+    (weather.tempMax != null && Number.isFinite(weather.tempMax));
+  const cloud = cloudDisplayLevel(weather.cloudCover);
+  const precip = precipDisplayLevel(weather.precipProb);
+  const hasWind = weather.windSpeed != null && Number.isFinite(weather.windSpeed);
+
+  return hasTemp || cloud != null || precip !== "none" || hasWind;
+}

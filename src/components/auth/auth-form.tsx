@@ -5,10 +5,12 @@ import { useCallback, useMemo, useState } from "react";
 
 import { useRegisterGoogleCredentialHandler } from "@/components/auth/google-identity-provider";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useAuthOperationLoading } from "@/components/providers/auth-operation-loading";
+import { useNavigationRouter } from "@/components/providers/navigation-loading";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Link, useRouter } from "@/i18n/routing";
+import { Link } from "@/i18n/routing";
 import type { AppLocale } from "@/i18n/routing";
 import { ApiError } from "@/lib/api-client";
 import { parseProblemJson, problemDetail } from "@/lib/api/problem-json";
@@ -35,8 +37,9 @@ export function AuthForm({
 }: AuthFormProps) {
   const t = useTranslations("auth");
   const locale = useLocale();
-  const router = useRouter();
+  const router = useNavigationRouter();
   const { login, register, loginWithGoogle } = useAuth();
+  const { startAuthOperation, stopAuthOperation } = useAuthOperationLoading();
 
   const browserPrefs = useMemo(
     () => ({
@@ -55,6 +58,7 @@ export function AuthForm({
     event.preventDefault();
     setError(null);
     setPending(true);
+    startAuthOperation(emailMode === "login" ? "login" : "register");
 
     try {
       if (emailMode === "login") {
@@ -69,13 +73,13 @@ export function AuthForm({
       }
       router.push(consumeAuthReturnPath("/"));
     } catch (err) {
+      stopAuthOperation();
       if (err instanceof ApiError) {
         const problem = parseProblemJson(err.bodyText);
         setError(problemDetail(problem, t("genericError")));
       } else {
         setError(t("genericError"));
       }
-    } finally {
       setPending(false);
     }
   }
@@ -84,6 +88,7 @@ export function AuthForm({
     async (idToken: string) => {
       setError(null);
       setPending(true);
+      startAuthOperation("google");
       try {
         await loginWithGoogle(idToken, {
           preferredLocale: browserPrefs.locale,
@@ -91,17 +96,25 @@ export function AuthForm({
         });
         router.push(consumeAuthReturnPath("/"));
       } catch (err) {
+        stopAuthOperation();
         if (err instanceof ApiError) {
           const problem = parseProblemJson(err.bodyText);
           setError(problemDetail(problem, t("genericError")));
         } else {
           setError(t("genericError"));
         }
-      } finally {
         setPending(false);
       }
     },
-    [browserPrefs.countryCode, browserPrefs.locale, loginWithGoogle, router, t],
+    [
+      browserPrefs.countryCode,
+      browserPrefs.locale,
+      loginWithGoogle,
+      router,
+      startAuthOperation,
+      stopAuthOperation,
+      t,
+    ],
   );
 
   useRegisterGoogleCredentialHandler(handleGoogle);
@@ -150,7 +163,7 @@ export function AuthForm({
           <span className="w-full border-t border-border" />
         </div>
         <p className="relative flex justify-center text-xs text-muted-foreground">
-          <span className="bg-white px-2">{t("orUse")}</span>
+          <span className="bg-card px-2">{t("orUse")}</span>
         </p>
       </div>
 

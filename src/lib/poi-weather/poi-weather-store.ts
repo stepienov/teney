@@ -72,12 +72,14 @@ class PoiWeatherStore {
 
   mergeFromPoi(poi: PoiDto): void {
     const weatherStatus =
-      poi.weatherStatus ??
-      (poi.coordinates == null
+      poi.beachDetails == null
         ? "NOT_APPLICABLE"
-        : poi.weather != null
-          ? "READY"
-          : "PENDING");
+        : (poi.weatherStatus ??
+          (poi.coordinates == null
+            ? "NOT_APPLICABLE"
+            : poi.weather != null
+              ? "READY"
+              : "PENDING"));
 
     const prev = this.entries.get(poi.id);
     const next = buildSlice(prev, {

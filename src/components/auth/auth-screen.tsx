@@ -15,7 +15,7 @@ export function AuthScreen({ title, subtitle, children }: AuthScreenProps) {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
       </header>
-      <div className="rounded-lg border border-border bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
         {children}
       </div>
     </div>

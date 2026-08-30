@@ -6,8 +6,10 @@ import { Suspense, useState } from "react";
 import { AuthReturnUrlTracker } from "@/components/auth/auth-return-url-tracker";
 import { GoogleIdentityProvider } from "@/components/auth/google-identity-provider";
 import { GoogleIdentityServices } from "@/components/auth/google-identity-services";
+import { AuthOperationLoadingProvider } from "@/components/providers/auth-operation-loading";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { NavigationLoadingProvider } from "@/components/providers/navigation-loading";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import { createQueryClient } from "@/lib/query/client";
 
 type AppProvidersProps = {
@@ -20,15 +22,21 @@ export function AppProviders({ children, googleClientId }: AppProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <GoogleIdentityProvider clientId={googleClientId}>
-          <AuthReturnUrlTracker />
-          <GoogleIdentityServices />
+      <ThemeProvider>
+        <AuthProvider>
           <Suspense fallback={null}>
-            <NavigationLoadingProvider>{children}</NavigationLoadingProvider>
+            <NavigationLoadingProvider>
+              <AuthOperationLoadingProvider>
+                <GoogleIdentityProvider clientId={googleClientId}>
+                  <AuthReturnUrlTracker />
+                  <GoogleIdentityServices />
+                  {children}
+                </GoogleIdentityProvider>
+              </AuthOperationLoadingProvider>
+            </NavigationLoadingProvider>
           </Suspense>
-        </GoogleIdentityProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

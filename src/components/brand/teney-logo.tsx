@@ -1,49 +1,39 @@
 import { cn } from "@/lib/utils";
 
+const LIGHT_SRC = "/brand/teney-lockup-on-light.png";
+const DARK_SRC = "/brand/teney-lockup-on-dark.png";
+
+const LIGHT_SIZE = { width: 1600, height: 518 };
+const DARK_SIZE = { width: 1600, height: 419 };
+
 type TeneyLogoProps = {
   className?: string;
+  /** Header lockup vs larger about/hero lockup. */
+  size?: "header" | "hero";
 };
 
-/**
- * Minimal line-art mark inspired by coastal badge shapes (stadium + sun + waves).
- */
-export function TeneyLogo({ className }: TeneyLogoProps) {
+export function TeneyLogo({ className, size = "header" }: TeneyLogoProps) {
+  const heightClass = size === "hero" ? "h-16 sm:h-[4.5rem]" : "h-14 sm:h-16";
+
   return (
-    <svg
-      viewBox="0 0 56 72"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={cn("h-auto w-14", className)}
-      aria-hidden
-    >
-      <rect
-        x="4"
-        y="2"
-        width="48"
-        height="68"
-        rx="24"
-        stroke="currentColor"
-        strokeWidth="1.75"
+    <span className={cn("relative inline-flex shrink-0 items-center", className)}>
+      <img
+        src={LIGHT_SRC}
+        alt="teney.APP"
+        width={LIGHT_SIZE.width}
+        height={LIGHT_SIZE.height}
+        className={cn(heightClass, "w-auto dark:hidden")}
+        decoding="async"
       />
-      <circle cx="28" cy="22" r="6" stroke="currentColor" strokeWidth="1.75" />
-      <path
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        d="M28 10v3M28 31v3M17 22h3M36 22h3M20 15l2 2M34 29l2 2M36 15l-2 2M20 29l-2 2"
+      <img
+        src={DARK_SRC}
+        alt=""
+        width={DARK_SIZE.width}
+        height={DARK_SIZE.height}
+        className={cn(heightClass, "hidden w-auto dark:block")}
+        decoding="async"
+        aria-hidden
       />
-      <path
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        d="M14 38h6l2-4h8l2 4h6"
-      />
-      <path
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        d="M10 48c4 3 8 4 18 4s14-1 18-4M12 56c5 3 10 4 16 4s11-1 16-4M14 64c4 2 9 3 14 3s10-1 14-3"
-      />
-    </svg>
+    </span>
   );
 }

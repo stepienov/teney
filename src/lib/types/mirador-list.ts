@@ -12,6 +12,8 @@ export type MiradorListItemDto = {
   regionName: string | null;
   attributes: BeachAttributes | null;
   distanceKm: number | null;
+  quality?: "MODEST" | "DECENT" | "GREAT" | null;
+  popularity?: "QUIET" | "KNOWN" | "PACKED" | null;
 };
 
 export type MiradorSearchFilterValue =

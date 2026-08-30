@@ -20,6 +20,87 @@ export type BeachDetails = {
   boatAccessOnly: boolean | null;
 };
 
+export type PointType = {
+  id: number;
+  description: string;
+};
+
+export type PoiPhoto = {
+  id: number;
+  url: string;
+  main: boolean;
+};
+
+export type PlaceQuality = "MODEST" | "DECENT" | "GREAT";
+
+export type PlacePopularity = "QUIET" | "KNOWN" | "PACKED";
+
+export type GooglePlacePhoto = {
+  url: string;
+  authorDisplayName: string | null;
+  authorUri: string | null;
+  authorPhotoUri: string | null;
+  googleMapsUri: string | null;
+  flagContentUri: string | null;
+};
+
+export type PoiGooglePhotosResponse = {
+  poiId: number;
+  googlePlaceId: string | null;
+  attribution: "Google Maps";
+  website: string | null;
+  phone: string | null;
+  openingHours: string | null;
+  priceLevel: string | null;
+  formattedAddress: string | null;
+  photos: GooglePlacePhoto[];
+};
+
+export type ViewpointDetails = {
+  hasOceanView: boolean | null;
+  carAccessEasy: boolean | null;
+  hikingRequired: boolean | null;
+  hikingDistanceM: number | null;
+  hasParking: boolean | null;
+};
+
+export type NaturalPoolDetails = {
+  tideDependent: boolean | null;
+  rockyAccess: boolean | null;
+  carAccessEasy: boolean | null;
+  hikingRequired: boolean | null;
+  hikingDistanceM: number | null;
+  hasParking: boolean | null;
+};
+
+export type NaturalAttractionDetails = {
+  naturalFeatureType: string | null;
+  isProtectedArea: boolean | null;
+  protectedAreaName: string | null;
+  bookingRequired: boolean | null;
+  guidedTourAvailable: boolean | null;
+};
+
+export type HistoricalSiteDetails = Record<string, never>;
+
+export type RestaurantDetails = {
+  isGuachinche: boolean | null;
+  bookingRequired: boolean | null;
+};
+
+export type ShopDetails = {
+  bookingRequired: boolean | null;
+};
+
+export type WineryDetails = {
+  tastingAvailable: boolean | null;
+  bookingRequired: boolean | null;
+};
+
+export type BookingFamilyDetails = {
+  bookingRequired: boolean | null;
+};
+
 export type Address = {
   id: number;
   street: string | null;
@@ -84,7 +165,7 @@ export type PoiDto = {
   ticketPrice: number | null;
   ticketPriceResident: number | null;
   currencyCode: string | null;
-  photoUrl: string | null;
+  photoUrl?: string | null;
   openingHours: string | null;
   visitorLimit: number | null;
   address: Address | null;
@@ -97,6 +178,38 @@ export type PoiDto = {
   /** Daily display weather from beach list search (`beach_display_weather`). */
   displayWeather?: BeachDisplayWeather | null;
   googlePlaceId?: string | null;
+  pointType?: PointType | null;
+  quality?: PlaceQuality | null;
+  popularity?: PlacePopularity | null;
+  googleMapsUrl?: string | null;
+  website?: string | null;
+  phone?: string | null;
+  googleTypes?: string | null;
+  primaryType?: string | null;
+  priceLevel?: string | null;
+  formattedAddress?: string | null;
+  entranceFeeInfo?: string | null;
+  hikingRequired?: boolean | null;
+  visitDurationMinutes?: number | null;
+  publicTransportInfo?: string | null;
+  hasParking?: boolean | null;
+  parkingOptions?: string | null;
+  bestTimeToVisitText?: string | null;
+  photos?: PoiPhoto[];
+  viewpointDetails?: ViewpointDetails | null;
+  naturalPoolDetails?: NaturalPoolDetails | null;
+  naturalAttractionDetails?: NaturalAttractionDetails | null;
+  historicalSiteDetails?: HistoricalSiteDetails | null;
+  restaurantDetails?: RestaurantDetails | null;
+  shopDetails?: ShopDetails | null;
+  museumDetails?: BookingFamilyDetails | null;
+  wineryDetails?: WineryDetails | null;
+  familyAttractionDetails?: BookingFamilyDetails | null;
+  kidsAttractionDetails?: BookingFamilyDetails | null;
+  waterSportsDetails?: BookingFamilyDetails | null;
+  marketDetails?: BookingFamilyDetails | null;
+  recreationAreaDetails?: BookingFamilyDetails | null;
+  botanicalGardenDetails?: BookingFamilyDetails | null;
 };
 
 export type SpringPage<T> = {
@@ -112,7 +225,7 @@ export type SpringPage<T> = {
 };
 
 export type PoiSearchRequest = {
-  filters?: Record<string, string | number | boolean>;
+  filters?: Record<string, string | number | boolean | number[] | string[]>;
   page?: number;
   size?: number;
   sort?: string;

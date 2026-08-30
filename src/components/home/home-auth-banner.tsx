@@ -32,7 +32,7 @@ export function HomeAuthBanner() {
   return (
     <section className="mb-6 w-full max-w-md rounded-lg border border-dashed border-border bg-muted/30 px-4 py-4 sm:px-5">
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white text-muted-foreground">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-card text-muted-foreground">
           <LogIn className="size-4" aria-hidden />
         </span>
         <div className="flex min-w-0 flex-col gap-3">
