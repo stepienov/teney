@@ -1,4 +1,4 @@
-import Image from "next/image";
+"use client";
 
 import { BeachListWeatherCell } from "@/components/beaches/beach-list-weather-cell";
 import { BeachAttributeBadges } from "@/components/beaches/beach-attribute-badges";
@@ -31,20 +31,7 @@ export function BeachTableRow({
           href={poiPath(beach)}
           className="flex min-w-0 items-center gap-2.5"
         >
-          <span className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted">
-            {beach.photoUrl ? (
-              <Image
-                src={beach.photoUrl}
-                alt=""
-                width={28}
-                height={28}
-                className="size-full object-cover"
-                unoptimized
-              />
-            ) : (
-              <PlaceholderIcon className="size-3.5 text-muted-foreground" aria-hidden />
-            )}
-          </span>
+          <PlaceholderIcon className="size-4 shrink-0 text-foreground/75" aria-hidden />
           <span className="truncate font-medium text-foreground group-hover:text-brand">
             {beach.name}
           </span>

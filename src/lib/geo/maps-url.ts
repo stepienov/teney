@@ -1,4 +1,4 @@
-import type { Coordinates } from "@/lib/types/poi";
+import type { Coordinates, PoiDto } from "@/lib/types/poi";
 
 export function buildMapsUrl(
   coordinates: Coordinates | null | undefined,
@@ -22,4 +22,14 @@ export function buildMapsUrl(
   }
 
   return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+}
+
+export function poiMapsUrl(
+  poi: Pick<PoiDto, "googleMapsUrl" | "coordinates" | "googlePlaceId" | "name">,
+): string | null {
+  const fromApi = poi.googleMapsUrl?.trim();
+  if (fromApi) {
+    return fromApi;
+  }
+  return buildMapsUrl(poi.coordinates, poi.googlePlaceId, poi.name);
 }

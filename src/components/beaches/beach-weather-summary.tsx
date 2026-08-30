@@ -7,6 +7,7 @@ import {
   cloudDisplayLevel,
   formatTempRange,
   formatWindSpeed,
+  hasRenderableBeachWeather,
   precipDisplayLevel,
   windSpeedTone,
 } from "@/lib/beach-display-weather";
@@ -20,26 +21,26 @@ type BeachWeatherSummaryProps = {
 };
 
 function CloudIcon({ level }: { level: ReturnType<typeof cloudDisplayLevel> }) {
-  const className = "size-3.5 shrink-0 text-amber-500";
+  const className = "size-3.5 shrink-0 text-peach";
 
   if (level === "clear") {
     return <Sun className={className} aria-hidden />;
   }
   if (level === "partly") {
-    return <CloudSun className={cn(className, "text-sky-500")} aria-hidden />;
+    return <CloudSun className={cn(className, "text-sky")} aria-hidden />;
   }
   if (level === "cloudy") {
-    return <Cloud className={cn(className, "text-slate-500")} aria-hidden />;
+    return <Cloud className={cn(className, "text-muted-foreground")} aria-hidden />;
   }
   return null;
 }
 
 function PrecipIcon({ level }: { level: ReturnType<typeof precipDisplayLevel> }) {
   if (level === "chance") {
-    return <Droplets className="size-3 shrink-0 text-sky-500" aria-hidden />;
+    return <Droplets className="size-3 shrink-0 text-sky" aria-hidden />;
   }
   if (level === "likely") {
-    return <CloudRain className="size-3.5 shrink-0 text-sky-600" aria-hidden />;
+    return <CloudRain className="size-3.5 shrink-0 text-sky" aria-hidden />;
   }
   return null;
 }
@@ -48,9 +49,9 @@ const WIND_TONE_CLASS: Record<
   NonNullable<ReturnType<typeof windSpeedTone>>,
   string
 > = {
-  calm: "text-emerald-600",
-  moderate: "text-amber-600",
-  strong: "text-red-600",
+  calm: "text-sky",
+  moderate: "text-coral",
+  strong: "text-coral",
 };
 
 export function BeachWeatherSummary({
@@ -75,12 +76,7 @@ export function BeachWeatherSummary({
       ? formatWindSpeed(weather.windSpeed, locale)
       : null;
 
-  if (
-    tempRange == null &&
-    cloud == null &&
-    precip === "none" &&
-    windLabel == null
-  ) {
+  if (!hasRenderableBeachWeather(weather)) {
     return (
       <span className={cn("text-xs text-muted-foreground", className)}>—</span>
     );

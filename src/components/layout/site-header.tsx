@@ -35,7 +35,7 @@ export function SiteHeader() {
         "z-40",
         isHome
           ? "absolute inset-x-0 top-0"
-          : "sticky top-0 border-b border-border bg-white/90 shadow-sm backdrop-blur-md",
+          : "sticky top-0 border-b border-border bg-card/90 shadow-sm backdrop-blur-md",
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -43,15 +43,10 @@ export function SiteHeader() {
           href="/"
           className={cn(
             "group flex items-center gap-2.5 transition-opacity hover:opacity-90",
-            isHome ? "text-white" : "text-ocean-deep",
+            isHome ? "text-white" : "text-foreground",
           )}
         >
-          <TeneyLogo
-            className={cn("w-8", isHome ? "stroke-white" : "stroke-ocean-deep")}
-          />
-          <span className="font-heading text-sm font-bold uppercase tracking-[0.12em]">
-            Teney
-          </span>
+          <TeneyLogo />
         </Link>
 
         <nav
@@ -65,10 +60,10 @@ export function SiteHeader() {
               className={cn(
                 "rounded-full px-3.5 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
                 isHome
-                  ? "text-white/90 hover:bg-white/15 hover:text-white"
-                  : "text-muted-foreground hover:bg-ocean-cyan/30 hover:text-ocean-deep",
+                  ? "text-white/90 hover:bg-card/15 hover:text-white"
+                  : "text-muted-foreground hover:bg-mint/30 hover:text-foreground",
                 pathname === item.href &&
-                  (isHome ? "bg-white/20 text-white" : "bg-ocean-cyan/40 text-ocean-deep"),
+                  (isHome ? "bg-card/20 text-white" : "bg-mint/40 text-foreground"),
               )}
             >
               {t(item.labelKey)}
@@ -89,8 +84,8 @@ export function SiteHeader() {
                     className={cn(
                       "rounded-full",
                       isHome
-                        ? "border-white/50 bg-white/10 text-white"
-                        : "border-border bg-white",
+                        ? "border-white/50 bg-card/10 text-white"
+                        : "border-border bg-card",
                     )}
                     aria-label={t("openMenu")}
                   />
@@ -98,9 +93,9 @@ export function SiteHeader() {
               >
                 <Menu />
               </SheetTrigger>
-              <SheetContent side="right" className="border-border bg-ocean-mist">
+              <SheetContent side="right" className="border-border bg-app-sidebar">
                 <SheetHeader>
-                  <SheetTitle className="font-heading uppercase tracking-wide text-ocean-deep">
+                  <SheetTitle className="font-heading uppercase tracking-wide text-foreground">
                     {t("menu")}
                   </SheetTitle>
                 </SheetHeader>
@@ -111,7 +106,7 @@ export function SiteHeader() {
                       render={
                         <Link
                           href={item.href}
-                          className="rounded-2xl px-3 py-2.5 text-sm font-medium text-ocean-deep hover:bg-ocean-cyan/40"
+                          className="rounded-2xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-mint/40"
                         />
                       }
                     >

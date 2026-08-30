@@ -141,6 +141,8 @@ export function BeachFilterMobile({
         ]
       : []),
     { value: "location", label: t("sortNearest") },
+    { value: "quality", label: t("sortQuality") },
+    { value: "popularity", label: t("sortPopularity") },
     { value: "name", label: t("sortName") },
   ] as const;
 
@@ -174,7 +176,7 @@ export function BeachFilterMobile({
   const sortValue = locationSortActive ? "location" : value.sort;
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 bg-white sm:hidden">
+    <div className="sticky top-0 z-30 -mx-4 bg-card sm:hidden">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h1 className="min-w-0 text-base font-bold tracking-wide text-foreground">
           {t("pageTitle")}
@@ -189,7 +191,7 @@ export function BeachFilterMobile({
             variant="outline"
             size="icon"
             className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              "size-9 shrink-0 rounded-md border-border bg-card shadow-sm",
               viewMode === "list" && "border-brand/50 bg-brand-muted text-brand",
             )}
             aria-pressed={viewMode === "list"}
@@ -203,7 +205,7 @@ export function BeachFilterMobile({
             variant="outline"
             size="icon"
             className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              "size-9 shrink-0 rounded-md border-border bg-card shadow-sm",
               viewMode === "grid" && "border-brand/50 bg-brand-muted text-brand",
             )}
             aria-pressed={viewMode === "grid"}
@@ -217,7 +219,7 @@ export function BeachFilterMobile({
             variant="outline"
             size="icon"
             className={cn(
-              "size-9 shrink-0 rounded-md border-border bg-white shadow-sm",
+              "size-9 shrink-0 rounded-md border-border bg-card shadow-sm",
               viewMode === "map" && "border-brand/50 bg-brand-muted text-brand",
             )}
             aria-pressed={viewMode === "map"}
@@ -258,7 +260,7 @@ export function BeachFilterMobile({
             <span
               role="button"
               tabIndex={0}
-              className="inline-flex size-6 items-center justify-center rounded-md text-brand/80 hover:bg-white/70"
+              className="inline-flex size-6 items-center justify-center rounded-md text-brand/80 hover:bg-card/70"
               aria-label={t("clearFilters")}
               onClick={(event) => {
                 event.stopPropagation();

@@ -5,13 +5,9 @@ import {
   Heart,
   Home,
   ListChecks,
-  Mountain,
-  Trees,
   User,
   Users,
   UsersRound,
-  Waves,
-  Droplets,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -19,15 +15,18 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import {
   defaultHomeTree,
+  mergeHomeTree,
   toggleHomeTree,
+  treeKeyForGroup,
   type HomeTreeState,
 } from "@/components/layout/sidebar-nav-state";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useInviteUnreadCount } from "@/hooks/use-invite-unread-count";
 import { Link, usePathname, useRouter } from "@/i18n/routing";
+import { NAV_GROUPS } from "@/lib/poi-categories/catalog";
 import { cn } from "@/lib/utils";
 
-const HOME_TREE_STORAGE_KEY = "teney-sidebar-home-tree";
+const HOME_TREE_STORAGE_KEY = "teney-sidebar-home-tree-v2";
 const HOME_TREE_CHANGE_EVENT = "teney-sidebar-home-tree-change";
 
 function subscribeHomeTree(onStoreChange: () => void) {
@@ -106,21 +105,16 @@ function writeStoredTree<T>(key: string, value: T) {
   }
 }
 
-const DEPTH_MARGIN = ["", "ml-3", "ml-6", "ml-9"] as const;
-
 function tileClass(active: boolean) {
   return cn(
-    "flex w-full min-w-0 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
-    active
-      ? "bg-brand-muted text-brand"
-      : "text-muted-foreground hover:bg-white hover:text-foreground",
+    "nav-tree-tile flex w-full min-w-0 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
+    !active && "text-foreground/75",
   );
 }
 
 type NavTileButtonProps = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  depth: number;
   active: boolean;
   expanded: boolean;
   onToggle: () => void;
@@ -131,7 +125,6 @@ type NavTileButtonProps = {
 function NavTileButton({
   label,
   icon: Icon,
-  depth,
   active,
   expanded,
   onToggle,
@@ -156,7 +149,8 @@ function NavTileButton({
       onClick={handleClick}
       title={label}
       aria-expanded={expanded}
-      className={cn(DEPTH_MARGIN[depth], tileClass(active))}
+      data-active={active ? "true" : undefined}
+      className={tileClass(active)}
     >
       <Icon className="size-4 shrink-0" aria-hidden />
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -175,7 +169,6 @@ type NavTileLinkProps = {
   href: string;
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
-  depth: number;
   active: boolean;
   badge?: number;
   badgeAriaLabel?: string;
@@ -186,7 +179,6 @@ function NavTileLink({
   href,
   label,
   icon: Icon,
-  depth,
   active,
   badge,
   badgeAriaLabel,
@@ -197,13 +189,14 @@ function NavTileLink({
       href={href}
       onClick={onNavigate}
       title={label}
-      className={cn(DEPTH_MARGIN[depth], tileClass(active))}
+      data-active={active ? "true" : undefined}
+      className={tileClass(active)}
     >
       {Icon ? <Icon className="size-4 shrink-0" aria-hidden /> : null}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge != null && badge > 0 ? (
         <span
-          className="ml-auto shrink-0 rounded-full bg-brand px-1.5 py-0.5 text-xs font-medium text-white tabular-nums"
+          className="ml-auto shrink-0 rounded-full bg-soft-gradient px-1.5 py-0.5 text-xs font-medium text-ink tabular-nums"
           aria-label={badgeAriaLabel}
         >
           {badge > 99 ? "99+" : badge}
@@ -216,7 +209,6 @@ function NavTileLink({
 export function AppNestedNav({ onNavigate }: AppNestedNavProps) {
   const t = useTranslations("shell");
   const pathname = usePathname();
-  const { status, user } = useAuth();
 
   const hasMounted = useSyncExternalStore(
     () => () => {},
@@ -234,17 +226,92 @@ export function AppNestedNav({ onNavigate }: AppNestedNavProps) {
     const json = hasMounted
       ? storedHomeTreeJson
       : JSON.stringify(defaultHomeTree(pathname));
-    return JSON.parse(json) as HomeTreeState;
+    try {
+      return mergeHomeTree(JSON.parse(json) as Partial<HomeTreeState>);
+    } catch {
+      return defaultHomeTree(pathname);
+    }
   }, [hasMounted, storedHomeTreeJson, pathname]);
 
   const toggleHome = useCallback(
     (key: keyof HomeTreeState) => {
-      const current = JSON.parse(readHomeTreeJson(pathname)) as HomeTreeState;
-      const next = toggleHomeTree(current, key);
+      let parsed: Partial<HomeTreeState> | undefined;
+      try {
+        parsed = JSON.parse(readHomeTreeJson(pathname)) as Partial<HomeTreeState>;
+      } catch {
+        parsed = defaultHomeTree(pathname);
+      }
+      const next = toggleHomeTree(mergeHomeTree(parsed), key);
       writeStoredTree(HOME_TREE_STORAGE_KEY, next);
       notifyHomeTreeChange();
     },
     [pathname],
+  );
+
+  return (
+    <div className="flex flex-col gap-1">
+      <NavTileButton
+        label={t("home")}
+        icon={Home}
+        active={pathname === "/"}
+        expanded={homeTree.home}
+        onToggle={() => toggleHome("home")}
+        href="/"
+        onNavigate={onNavigate}
+      />
+      {homeTree.home ? (
+        <div className="space-y-1 pl-3">
+          {NAV_GROUPS.map((group) => {
+            const GroupIcon = group.icon;
+            const treeKey = treeKeyForGroup(group.id);
+            const groupActive = group.items.some((item) =>
+              isPathActive(pathname, item.href),
+            );
+
+            return (
+              <div key={group.id} className="space-y-1">
+                <NavTileButton
+                  label={t(group.labelKey)}
+                  icon={GroupIcon}
+                  active={groupActive}
+                  expanded={homeTree[treeKey]}
+                  onToggle={() => toggleHome(treeKey)}
+                />
+                {homeTree[treeKey] ? (
+                  <div className="space-y-1 pl-3">
+                    {group.items.map((item) => {
+                      const ItemIcon = item.icon;
+                      return (
+                        <NavTileLink
+                          key={item.href}
+                          href={item.href}
+                          label={t(item.navKey)}
+                          icon={ItemIcon}
+                          active={isPathActive(pathname, item.href)}
+                          onNavigate={onNavigate}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function AppAccountNav({ onNavigate }: AppNestedNavProps) {
+  const t = useTranslations("shell");
+  const pathname = usePathname();
+  const { status, user } = useAuth();
+
+  const hasMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
   );
 
   const isAuthenticated =
@@ -256,88 +323,30 @@ export function AppNestedNav({ onNavigate }: AppNestedNavProps) {
     ? isExactPathActive(pathname, "/account")
     : isPathActive(pathname, "/login");
 
-  const showAccountChildren = isAuthenticated;
   const { data: unreadInvites } = useInviteUnreadCount();
 
   return (
     <div className="flex flex-col gap-1">
-      <NavTileButton
-        label={t("home")}
-        icon={Home}
-        depth={0}
-        active={pathname === "/"}
-        expanded={homeTree.home}
-        onToggle={() => toggleHome("home")}
-        href="/"
-        onNavigate={onNavigate}
-      />
-      {homeTree.home ? (
-        <div className="space-y-1">
-          <NavTileButton
-            label={t("natureAndLandscapes")}
-            icon={Trees}
-            depth={1}
-            active={false}
-            expanded={homeTree.nature}
-            onToggle={() => toggleHome("nature")}
-          />
-          {homeTree.nature ? (
-            <div className="space-y-1">
-              <NavTileLink
-                href="/beaches"
-                label={t("beaches")}
-                icon={Waves}
-                depth={2}
-                active={isPathActive(pathname, "/beaches")}
-                onNavigate={onNavigate}
-              />
-              <NavTileLink
-                href="/natural-pools"
-                label={t("naturalPools")}
-                icon={Droplets}
-                depth={2}
-                active={isPathActive(pathname, "/natural-pools")}
-                onNavigate={onNavigate}
-              />
-              <NavTileLink
-                href="/miradores"
-                label={t("miradores")}
-                icon={Mountain}
-                depth={2}
-                active={isPathActive(pathname, "/miradores")}
-                onNavigate={onNavigate}
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="my-2 border-t border-border" role="separator" />
-
       <NavTileLink
         href={accountHref}
         label={accountLabel}
         icon={User}
-        depth={0}
         active={accountActive}
         onNavigate={onNavigate}
       />
-      {showAccountChildren ? (
-        <div className="space-y-1">
+      {isAuthenticated ? (
+        <div className="space-y-1 pl-3">
           <NavTileLink
             href="/favorites"
             label={t("favorites")}
             icon={Heart}
-            depth={1}
             active={isPathActive(pathname, "/favorites")}
             onNavigate={onNavigate}
           />
-
           <NavTileLink
             href="/lists"
             label={t("lists")}
             icon={ListChecks}
-            depth={1}
             active={isPathActive(pathname, "/lists")}
             badge={unreadInvites?.lists}
             badgeAriaLabel={t("unreadInvites", {
@@ -345,12 +354,10 @@ export function AppNestedNav({ onNavigate }: AppNestedNavProps) {
             })}
             onNavigate={onNavigate}
           />
-
           <NavTileLink
             href="/friends"
             label={t("friends")}
             icon={Users}
-            depth={1}
             active={isPathActive(pathname, "/friends")}
             badge={unreadInvites?.friends}
             badgeAriaLabel={t("unreadInvites", {
@@ -358,12 +365,10 @@ export function AppNestedNav({ onNavigate }: AppNestedNavProps) {
             })}
             onNavigate={onNavigate}
           />
-
           <NavTileLink
             href="/groups"
             label={t("groups")}
             icon={UsersRound}
-            depth={1}
             active={isPathActive(pathname, "/groups")}
             badge={unreadInvites?.groups}
             badgeAriaLabel={t("unreadInvites", {
@@ -373,7 +378,7 @@ export function AppNestedNav({ onNavigate }: AppNestedNavProps) {
           />
         </div>
       ) : (
-        <p className={cn(DEPTH_MARGIN[1], "px-2.5 py-1.5 text-xs text-muted-foreground")}>
+        <p className="px-2.5 py-1.5 text-xs text-muted-foreground">
           {t("accountGuestHint")}
         </p>
       )}

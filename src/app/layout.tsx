@@ -2,6 +2,8 @@ import { DM_Sans, Geist, Geist_Mono } from "next/font/google";
 import { getLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { ThemeScript } from "@/components/theme/theme-script";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,6 +35,9 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="overflow-hidden" suppressHydrationWarning>
         {children}
       </body>

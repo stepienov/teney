@@ -415,6 +415,10 @@ export function BeachMapView({
     let isProgrammaticMove = false;
     const userAdjustedViewRef = { current: false };
 
+    if (container.clientHeight < 48) {
+      container.style.minHeight = "24rem";
+    }
+
     const map = new maplibregl.Map({
       container,
       style: MAP_STYLE,
@@ -422,6 +426,13 @@ export function BeachMapView({
       zoom: 9,
       minZoom: 7,
       maxZoom: 14,
+      trackResize: true,
+    });
+
+    map.on("error", (event) => {
+      if (event.error) {
+        console.warn("MapLibre error", event.error);
+      }
     });
 
     map.addControl(
@@ -461,118 +472,137 @@ export function BeachMapView({
       map.getCanvas().style.cursor = "";
     };
 
-    map.on("load", () => {
+    let poiEventsBound = false;
+
+    const addPoiLayers = () => {
       if (cancelled) {
         return;
       }
 
-      map.addSource("beaches", {
-        type: "geojson",
-        data: beachesToGeoJson(
-          beachesRef.current,
-          locale,
-          poiPath,
-          selectedBeachIdRef.current,
-        ),
-      });
-
-      map.addLayer({
-        id: "beaches-points",
-        type: "circle",
-        source: "beaches",
-        paint: {
-          "circle-radius": 8,
-          "circle-color": "#5b4bf0",
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff",
-        },
-      });
-
-      addBeachLabelsLayer(map, !prefersHoverRef.current);
-      addUserLocationLayers(map, userCoordsRef.current);
-
-      map.on("click", USER_LOCATION_DOT_LAYER_ID, () => {
-        const coords = userCoordsRef.current;
-        if (coords != null) {
-          flyToUserLocationRef.current(coords);
-        }
-      });
-
-      map.on("mouseenter", USER_LOCATION_DOT_LAYER_ID, () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-
-      map.on("mouseleave", USER_LOCATION_DOT_LAYER_ID, () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      map.on("mousemove", (event) => {
-        if (!prefersHoverRef.current) {
-          return;
-        }
-
-        const features = map.queryRenderedFeatures(event.point, {
-          layers: ["beaches-points"],
+      if (map.getSource("beaches") == null) {
+        map.addSource("beaches", {
+          type: "geojson",
+          data: beachesToGeoJson(
+            beachesRef.current,
+            locale,
+            poiPath,
+            selectedBeachIdRef.current,
+          ),
         });
-        const feature = features[0];
 
-        if (feature?.geometry?.type !== "Point") {
-          setHoverTarget(null);
+        map.addLayer({
+          id: "beaches-points",
+          type: "circle",
+          source: "beaches",
+          paint: {
+            "circle-radius": 8,
+            "circle-color": "#f8a28c",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#ffffff",
+          },
+        });
+
+        try {
+          addBeachLabelsLayer(map, !prefersHoverRef.current);
+        } catch (error) {
+          console.warn("Beach map labels skipped", error);
+        }
+        addUserLocationLayers(map, userCoordsRef.current);
+      }
+
+      if (!poiEventsBound) {
+        poiEventsBound = true;
+
+        map.on("click", USER_LOCATION_DOT_LAYER_ID, () => {
+          const coords = userCoordsRef.current;
+          if (coords != null) {
+            flyToUserLocationRef.current(coords);
+          }
+        });
+
+        map.on("mouseenter", USER_LOCATION_DOT_LAYER_ID, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+
+        map.on("mouseleave", USER_LOCATION_DOT_LAYER_ID, () => {
           map.getCanvas().style.cursor = "";
-          return;
-        }
-
-        const beach = findBeachByFeatureId(
-          beachesRef.current,
-          feature.properties?.id,
-        );
-        if (beach == null) {
-          setHoverTarget(null);
-          map.getCanvas().style.cursor = "";
-          return;
-        }
-
-        setHoverTarget({
-          beach,
-          lngLat: feature.geometry.coordinates as [number, number],
         });
-        map.getCanvas().style.cursor = "pointer";
-      });
 
-      container.addEventListener("mouseleave", clearHover);
+        map.on("mousemove", (event) => {
+          if (!prefersHoverRef.current || map.getLayer("beaches-points") == null) {
+            return;
+          }
 
-      map.on("click", (event) => {
-        const features = map.queryRenderedFeatures(event.point, {
-          layers: ["beaches-points"],
+          const features = map.queryRenderedFeatures(event.point, {
+            layers: ["beaches-points"],
+          });
+          const feature = features[0];
+
+          if (feature?.geometry?.type !== "Point") {
+            setHoverTarget(null);
+            map.getCanvas().style.cursor = "";
+            return;
+          }
+
+          const beach = findBeachByFeatureId(
+            beachesRef.current,
+            feature.properties?.id,
+          );
+          if (beach == null) {
+            setHoverTarget(null);
+            map.getCanvas().style.cursor = "";
+            return;
+          }
+
+          setHoverTarget({
+            beach,
+            lngLat: feature.geometry.coordinates as [number, number],
+          });
+          map.getCanvas().style.cursor = "pointer";
         });
-        const feature = features[0];
 
-        if (feature?.geometry?.type !== "Point") {
-          setSelectedBeachId(null);
-          return;
-        }
+        container.addEventListener("mouseleave", clearHover);
 
-        const beach = findBeachByFeatureId(
-          beachesRef.current,
-          feature.properties?.id,
-        );
-        if (beach == null) {
-          setSelectedBeachId(null);
-          return;
-        }
+        map.on("click", (event) => {
+          if (map.getLayer("beaches-points") == null) {
+            return;
+          }
 
-        setSelectedBeachId(beach.id);
-      });
+          const features = map.queryRenderedFeatures(event.point, {
+            layers: ["beaches-points"],
+          });
+          const feature = features[0];
+
+          if (feature?.geometry?.type !== "Point") {
+            setSelectedBeachId(null);
+            return;
+          }
+
+          const beach = findBeachByFeatureId(
+            beachesRef.current,
+            feature.properties?.id,
+          );
+          if (beach == null) {
+            setSelectedBeachId(null);
+            return;
+          }
+
+          setSelectedBeachId(beach.id);
+        });
+      }
 
       applyDefaultFrame();
       window.requestAnimationFrame(applyDefaultFrame);
       map.once("idle", applyDefaultFrame);
-    });
+    };
+
+    map.on("load", addPoiLayers);
 
     const resizeObserver = new ResizeObserver(() => {
       if (cancelled) {
         return;
       }
+      map.resize();
       applyMapRegion(map, container);
       if (userAdjustedViewRef.current) {
         return;
@@ -619,17 +649,17 @@ export function BeachMapView({
   return (
     <div
       className={cn(
-        "flex min-h-0 w-full flex-col overflow-visible",
+        "beach-map relative min-h-[24rem] w-full overflow-hidden",
         className,
       )}
     >
       <div
         ref={overlayRootRef}
-        className="relative min-h-0 w-full flex-1 overflow-visible"
+        className="absolute inset-0 overflow-visible"
       >
         <div
           ref={containerRef}
-          className="size-full overflow-hidden rounded-lg border border-border bg-muted"
+          className="beach-map absolute inset-0 overflow-hidden rounded-lg border border-border bg-muted"
         />
 
         <button

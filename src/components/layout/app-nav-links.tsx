@@ -37,7 +37,7 @@ export function AppNavLinks({
   onNavigate,
   linkClassName,
   activeClassName = "bg-brand-muted text-brand",
-  inactiveClassName = "text-muted-foreground hover:bg-white hover:text-foreground",
+  inactiveClassName = "text-muted-foreground hover:bg-card hover:text-foreground",
 }: AppNavLinksProps) {
   const { status, user } = useAuth();
   const hasMounted = useSyncExternalStore(

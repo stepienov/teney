@@ -6,7 +6,7 @@ import { type ReactNode, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const triggerClass =
-  "inline-flex h-9 min-w-0 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-white px-3 text-sm text-foreground shadow-sm transition-colors hover:bg-muted/50";
+  "inline-flex h-9 min-w-0 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3 text-sm text-foreground shadow-sm transition-colors hover:bg-muted/50";
 
 type FilterMenuProps = {
   label: string;
@@ -51,7 +51,7 @@ export function FilterMenu({
           {hasActive && onClear ? (
             <button
               type="button"
-              className="inline-flex size-5 cursor-pointer items-center justify-center rounded text-brand/80 transition-colors hover:bg-white/80 hover:text-brand"
+              className="inline-flex size-5 cursor-pointer items-center justify-center rounded text-brand/80 transition-colors hover:bg-card/80 hover:text-brand"
               aria-label={clearLabel}
               onMouseDown={(event) => {
                 event.preventDefault();
@@ -86,7 +86,7 @@ export function FilterMenu({
       >
         <div
           className={cn(
-            "min-w-[12rem] overflow-visible rounded-lg border border-border bg-white shadow-md transition-opacity duration-150",
+            "min-w-[12rem] overflow-visible rounded-lg border border-border bg-card shadow-md transition-opacity duration-150",
             open ? "opacity-100" : "opacity-0",
           )}
           role="menu"
@@ -137,7 +137,7 @@ function FilterToggleSwitch({
     >
       <span
         className={cn(
-          "pointer-events-none inline-block rounded-full bg-white transition-transform duration-150",
+          "pointer-events-none inline-block rounded-full bg-card transition-transform duration-150",
           compact ? "size-3.5 shadow-sm" : "size-5 shadow-sm",
           checked
             ? compact
@@ -379,7 +379,7 @@ export function FilterSubmenu({
       >
         <div
           className={cn(
-            "min-w-[11rem] overflow-visible rounded-lg border border-border bg-white py-1 shadow-md transition-opacity duration-150",
+            "min-w-[11rem] overflow-visible rounded-lg border border-border bg-card py-1 shadow-md transition-opacity duration-150",
             open ? "opacity-100" : "opacity-0",
           )}
           role="menu"
@@ -414,15 +414,15 @@ export function FilterBadgeToggle({
         onToggle();
       }}
       className={cn(
-        "inline-flex h-6 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-medium leading-none whitespace-nowrap transition-colors",
+        "inline-flex h-6 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-semibold leading-none whitespace-nowrap transition-colors",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         variant === "paid"
           ? checked
-            ? "bg-brand text-brand-foreground ring-1 ring-brand"
-            : "bg-brand-muted text-brand hover:bg-brand-muted/80"
+            ? "bg-coral text-ink ring-1 ring-ink/40"
+            : "bg-coral/80 text-ink hover:bg-coral"
           : checked
-            ? "bg-brand-muted text-brand ring-1 ring-brand/50"
-            : "bg-muted text-secondary-foreground hover:bg-neutral-200",
+            ? "bg-sand text-ink ring-1 ring-ink/45"
+            : "bg-sand/80 text-ink hover:bg-sand",
       )}
     >
       {label}
@@ -505,7 +505,7 @@ export function SortMenu({ sortLabel, children }: SortMenuProps) {
       >
         <div
           className={cn(
-            "min-w-[11rem] overflow-visible rounded-lg border border-border bg-white py-1 shadow-md transition-opacity duration-150",
+            "min-w-[11rem] overflow-visible rounded-lg border border-border bg-card py-1 shadow-md transition-opacity duration-150",
             open ? "opacity-100" : "opacity-0",
           )}
           role="menu"

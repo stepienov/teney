@@ -11,15 +11,12 @@ export function AppBrandLink({ className }: AppBrandLinkProps) {
     <Link
       href="/"
       className={cn(
-        "flex min-w-0 items-center gap-2.5 text-brand-foreground transition-opacity hover:opacity-90",
+        "flex min-w-0 items-center transition-opacity hover:opacity-90",
         className,
       )}
-      title="Teney"
+      title="teney.APP"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/15">
-        <TeneyLogo className="w-4 stroke-brand-foreground" />
-      </span>
-      <span className="truncate text-sm font-semibold">Teney</span>
+      <TeneyLogo />
     </Link>
   );
 }

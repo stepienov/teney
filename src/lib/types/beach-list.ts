@@ -28,6 +28,8 @@ export type BeachListItemDto = {
   attributes: BeachAttributes | null;
   distanceKm: number | null;
   weather: BeachDisplayWeather | null;
+  quality?: "MODEST" | "DECENT" | "GREAT" | null;
+  popularity?: "QUIET" | "KNOWN" | "PACKED" | null;
 };
 
 export type BeachSearchFilterValue =

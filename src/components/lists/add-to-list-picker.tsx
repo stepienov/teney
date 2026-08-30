@@ -63,7 +63,7 @@ export function AddToListPicker({ poiId, onClose }: AddToListPickerProps) {
         aria-modal="true"
         aria-labelledby="add-to-list-title"
       >
-        <div className="w-full max-w-sm rounded-lg border border-border bg-white p-5 shadow-lg">
+        <div className="w-full max-w-sm rounded-lg border border-border bg-card p-5 shadow-lg">
           <h2 id="add-to-list-title" className="text-base font-semibold text-foreground">
             {t("pickList")}
           </h2>

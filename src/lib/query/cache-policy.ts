@@ -15,6 +15,11 @@ export const CACHE_POLICY = {
     staleTime: 10 * 60_000,
     gcTime: 60 * 60_000,
   },
+  /** Live Place Photos — URLs expire; do not persist. */
+  googlePhotos: {
+    staleTime: 0,
+    gcTime: 60_000,
+  },
   /** Session-persisted React Query snapshot. */
   queryPersist: {
     maxAgeMs: 30 * 60_000,

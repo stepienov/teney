@@ -18,6 +18,9 @@ function shouldPersistQuery(query: Query): boolean {
   }
 
   const root = key[0];
+  if (root === "poi" && key[2] === "google-photos") {
+    return false;
+  }
   return root === "poi" || root === "reference";
 }
 

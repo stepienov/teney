@@ -6,15 +6,15 @@ import { cn } from "@/lib/utils";
 /** Shared page padding — matches account dashboard and beaches explorer. */
 export const pagePaddingClass = "px-4 py-8 sm:px-8 sm:py-10";
 
-/** White card surface used in sections and list tiles. */
+/** Card surface used in sections and list tiles. */
 export const pageCardClass =
-  "rounded-lg border border-border bg-white p-5 shadow-sm";
+  "rounded-lg border border-border bg-card p-5 shadow-sm";
 
 export const pageCardInteractiveClass =
-  "rounded-lg border border-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md";
+  "rounded-lg border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md";
 
 export const pageRowClass =
-  "rounded-lg border border-border bg-white px-4 py-3 shadow-sm";
+  "rounded-lg border border-border bg-card px-4 py-3 shadow-sm";
 
 /** Standard max width for account/settings page body. */
 export const pageContentClass = "max-w-3xl";
@@ -144,7 +144,7 @@ export function PageSection({
   return (
     <section
       className={cn(
-        "rounded-lg border border-border bg-white p-5 shadow-sm",
+        "rounded-lg border border-border bg-card p-5 shadow-sm",
         className,
       )}
     >
@@ -189,7 +189,7 @@ type GuestPromptProps = {
 export function GuestPrompt({ icon: Icon, title, body, actions }: GuestPromptProps) {
   return (
     <PageRoot>
-      <div className="max-w-lg rounded-lg border border-border bg-white p-6 shadow-sm">
+      <div className="max-w-lg rounded-lg border border-border bg-card p-6 shadow-sm">
         <Icon className="size-10 text-muted-foreground" aria-hidden />
         <h1 className="mt-4 text-xl font-semibold text-foreground">{title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{body}</p>
@@ -236,7 +236,7 @@ export function PageTabBar({
           >
             {tab.label}
             {tab.badge != null && tab.badge > 0 ? (
-              <span className="rounded-full bg-brand px-1.5 py-0.5 text-xs text-white">
+              <span className="rounded-full bg-brand px-1.5 py-0.5 text-xs text-brand-foreground">
                 {tab.badge}
               </span>
             ) : null}

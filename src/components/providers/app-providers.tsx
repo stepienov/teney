@@ -9,6 +9,7 @@ import { GoogleIdentityServices } from "@/components/auth/google-identity-servic
 import { AuthOperationLoadingProvider } from "@/components/providers/auth-operation-loading";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { NavigationLoadingProvider } from "@/components/providers/navigation-loading";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import { createQueryClient } from "@/lib/query/client";
 
 type AppProvidersProps = {
@@ -21,19 +22,21 @@ export function AppProviders({ children, googleClientId }: AppProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Suspense fallback={null}>
-          <NavigationLoadingProvider>
-            <AuthOperationLoadingProvider>
-              <GoogleIdentityProvider clientId={googleClientId}>
-                <AuthReturnUrlTracker />
-                <GoogleIdentityServices />
-                {children}
-              </GoogleIdentityProvider>
-            </AuthOperationLoadingProvider>
-          </NavigationLoadingProvider>
-        </Suspense>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <NavigationLoadingProvider>
+              <AuthOperationLoadingProvider>
+                <GoogleIdentityProvider clientId={googleClientId}>
+                  <AuthReturnUrlTracker />
+                  <GoogleIdentityServices />
+                  {children}
+                </GoogleIdentityProvider>
+              </AuthOperationLoadingProvider>
+            </NavigationLoadingProvider>
+          </Suspense>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

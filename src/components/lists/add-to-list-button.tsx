@@ -49,7 +49,7 @@ export function AddToListButton({
         onClick={handleClick}
         disabled={status === "loading"}
         className={cn(
-          "rounded-full border-white/80 bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white",
+          "rounded-full border-white/80 bg-card/90 shadow-sm backdrop-blur-sm hover:bg-card",
           className,
         )}
         aria-label={t("addToList")}

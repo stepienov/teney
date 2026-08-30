@@ -49,7 +49,7 @@ export function ListCard({ list, onEdit, onDelete }: ListCardProps) {
               onClick={() => setMenuOpen(false)}
               aria-hidden
             />
-            <div className="absolute right-0 z-20 mt-1 w-36 rounded-md border border-border bg-white py-1 shadow-md">
+            <div className="absolute right-0 z-20 mt-1 w-36 rounded-md border border-border bg-card py-1 shadow-md">
               <button
                 type="button"
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted"

@@ -12,14 +12,17 @@ import { currentSearchQuery } from "@/lib/locale-href";
 import { cn } from "@/lib/utils";
 
 type LocaleSwitcherCompactProps = {
-  /** Przycisk na fioletowej belce nagłówka. */
-  tone?: "default" | "onBrand";
+  className?: string;
+  menuPlacement?: "down" | "up";
 };
 
 const triggerClass =
-  "inline-flex h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 text-xs font-medium tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "inline-flex h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 text-xs font-medium tracking-wide text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export function LocaleSwitcherCompact({ tone = "default" }: LocaleSwitcherCompactProps) {
+export function LocaleSwitcherCompact({
+  className,
+  menuPlacement = "down",
+}: LocaleSwitcherCompactProps) {
   const t = useTranslations("locale");
   const locale = useLocale() as AppLocale;
   const router = useNavigationRouter();
@@ -50,12 +53,7 @@ export function LocaleSwitcherCompact({ tone = "default" }: LocaleSwitcherCompac
     >
       <button
         type="button"
-        className={cn(
-          triggerClass,
-          tone === "onBrand"
-            ? "text-brand-foreground hover:bg-white/15"
-            : "text-foreground hover:bg-muted",
-        )}
+        className={cn(triggerClass, className)}
         aria-label={`${t("label")}: ${localeMenuLabels[locale]}`}
         aria-haspopup="listbox"
         aria-expanded={showMenu}
@@ -66,7 +64,10 @@ export function LocaleSwitcherCompact({ tone = "default" }: LocaleSwitcherCompac
 
       <div
         className={cn(
-          "absolute right-0 top-full z-50 min-w-[7rem] pt-2",
+          "absolute z-50 min-w-[7rem]",
+          menuPlacement === "up"
+            ? "bottom-full left-0 pb-2"
+            : "top-full right-0 pt-2",
           showMenu ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
@@ -74,7 +75,7 @@ export function LocaleSwitcherCompact({ tone = "default" }: LocaleSwitcherCompac
           role="listbox"
           aria-label={t("label")}
           className={cn(
-            "overflow-hidden rounded-lg border border-border bg-white py-0.5 shadow-md transition-opacity duration-150",
+            "overflow-hidden rounded-lg border border-border bg-popover py-0.5 shadow-md transition-opacity duration-150",
             showMenu ? "opacity-100" : "opacity-0",
           )}
         >

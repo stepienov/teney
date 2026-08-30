@@ -141,7 +141,7 @@ export function ShareDialog({ listId, open, onClose }: ShareDialogProps) {
       aria-modal="true"
       aria-labelledby="share-dialog-title"
     >
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-white shadow-lg">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-card shadow-lg">
         <div className="border-b border-border p-5">
           <h2 id="share-dialog-title" className="text-lg font-semibold text-foreground">
             {t("title")}

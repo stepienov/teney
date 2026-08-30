@@ -43,7 +43,7 @@ export function ListFormDialog({
       aria-modal="true"
       aria-labelledby="list-form-title"
     >
-      <div className="w-full max-w-md rounded-lg border border-border bg-white p-6 shadow-lg">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
         <h2 id="list-form-title" className="text-lg font-semibold text-foreground">
           {initial ? t("editTitle") : t("createTitle")}
         </h2>

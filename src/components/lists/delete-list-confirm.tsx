@@ -31,7 +31,7 @@ export function DeleteListConfirm({
       aria-modal="true"
       aria-labelledby="delete-list-title"
     >
-      <div className="w-full max-w-sm rounded-lg border border-border bg-white p-6 shadow-lg">
+      <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-lg">
         <h2 id="delete-list-title" className="text-lg font-semibold text-foreground">
           {t("confirmDeleteTitle")}
         </h2>

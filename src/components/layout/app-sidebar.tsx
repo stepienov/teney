@@ -2,10 +2,10 @@
 
 import { useTranslations } from "next-intl";
 
-import { AppNestedNav } from "@/components/layout/app-nested-nav";
+import { AppSidebarPanel } from "@/components/layout/app-sidebar-panel";
 import { cn } from "@/lib/utils";
 
-export const APP_SIDEBAR_WIDTH_CLASS = "w-[15.5rem]";
+export const APP_SIDEBAR_WIDTH_CLASS = "w-[18.5rem]";
 
 export function AppSidebar() {
   const t = useTranslations("shell");
@@ -18,9 +18,7 @@ export function AppSidebar() {
       )}
       aria-label={t("sidebarLabel")}
     >
-      <nav className="flex flex-1 flex-col overflow-y-auto p-2.5" aria-label={t("mainNav")}>
-        <AppNestedNav />
-      </nav>
+      <AppSidebarPanel />
     </aside>
   );
 }

@@ -1,22 +1,27 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
+import { setRequestLocale } from "next-intl/server";
 
-import {
-  PageHeader,
-  PageRoot,
-} from "@/components/layout/page-layout";
+import { GenericCategoryExplorer } from "@/components/poi-explorer/generic-category-explorer";
 
 type Props = {
   params: Promise<{ locale: string }>;
 };
 
-export default async function NaturalPoolsPage({ params }: Props) {
+function Fallback() {
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-16 text-center text-muted-foreground">
+      …
+    </div>
+  );
+}
+
+export default async function Page({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("naturalPools");
 
   return (
-    <PageRoot>
-      <PageHeader title={t("title")} subtitle={t("comingSoon")} />
-    </PageRoot>
+    <Suspense fallback={<Fallback />}>
+      <GenericCategoryExplorer basePath="/natural-pools" />
+    </Suspense>
   );
 }

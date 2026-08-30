@@ -73,6 +73,8 @@ export function beachListItemToPoiDto(item: BeachListItemDto): PoiDto {
     currencyCode: null,
     photoUrl: item.photoUrl,
     googlePlaceId: item.googlePlaceId,
+    quality: item.quality,
+    popularity: item.popularity,
     openingHours: null,
     visitorLimit: null,
     address: null,

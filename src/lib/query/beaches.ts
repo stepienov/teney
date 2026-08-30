@@ -95,7 +95,7 @@ async function fetchAllBeachesForMap(
 
     beaches.push(...page.content);
 
-    if (page.last || page.empty) {
+    if (page.last || page.empty || page.content.length === 0 || pageNum >= 40) {
       break;
     }
 

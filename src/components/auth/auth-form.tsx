@@ -163,7 +163,7 @@ export function AuthForm({
           <span className="w-full border-t border-border" />
         </div>
         <p className="relative flex justify-center text-xs text-muted-foreground">
-          <span className="bg-white px-2">{t("orUse")}</span>
+          <span className="bg-card px-2">{t("orUse")}</span>
         </p>
       </div>
 

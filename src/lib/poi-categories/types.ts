@@ -64,6 +64,8 @@ export type PoiCategoryExplorerConfig = {
   category: PoiCategory;
   basePath: string;
   messagesNamespace: "beaches" | "miradores";
+  /** When set, list heading comes from `poiCategories.{listTitleKey}` instead of namespace pageTitle. */
+  listTitleKey?: string;
   viewStorageKey: string;
   defaultSort: string;
   features: PoiCategoryFeatures;

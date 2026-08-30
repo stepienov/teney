@@ -56,7 +56,7 @@ export function BeachFavoriteButton({
       onClick={handleClick}
       disabled={pending || status === "loading"}
       className={cn(
-        "rounded-full border-white/80 bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white",
+        "rounded-full border-white/80 bg-card/90 shadow-sm backdrop-blur-sm hover:bg-card",
         favorite && "border-brand/30 bg-brand-muted text-brand hover:bg-brand-muted",
         className,
       )}

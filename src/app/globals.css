@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -12,9 +13,18 @@
   --font-heading: var(--font-geist-sans);
   --color-app-sidebar: var(--app-sidebar);
   --color-app-main: var(--app-main);
+  --color-app-header: var(--app-header);
   --color-brand: var(--brand);
   --color-brand-muted: var(--brand-muted);
   --color-brand-foreground: var(--brand-foreground);
+  --color-mint: var(--mint);
+  --color-sand: var(--sand);
+  --color-peach: var(--peach);
+  --color-coral: var(--coral);
+  --color-navy: var(--navy);
+  --color-lavender: var(--lavender);
+  --color-sky: var(--sky);
+  --color-ink: var(--ink);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -54,43 +64,103 @@
 }
 
 :root {
+  color-scheme: light;
+  --sand: #ded6c6;
+  --mint: #aee4d6;
+  --peach: #f4cbac;
+  --coral: #f8a28c;
+  --ink: #03030d;
+  --navy: #3533cd;
+  --lavender: #8c52ff;
+  --sky: #5ce1e6;
+  --lilac: #ae8def;
+  --aqua: #76daed;
   --background: #ffffff;
-  --foreground: #111827;
+  --foreground: #03030d;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #03030d;
   --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #5b4bf0;
+  --popover-foreground: #03030d;
+  --primary: #8c52ff;
   --primary-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #374151;
-  --muted: #f9fafb;
-  --muted-foreground: #6b7280;
-  --accent: #ede9fe;
-  --accent-foreground: #5b4bf0;
-  --destructive: #dc2626;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #5b4bf0;
-  --chart-1: #5b4bf0;
-  --chart-2: #8b5cf6;
-  --chart-3: #111827;
-  --chart-4: #9ca3af;
-  --chart-5: #6b7280;
+  --secondary: #f4efe6;
+  --secondary-foreground: #03030d;
+  --muted: #f6f3ec;
+  --muted-foreground: #5a564c;
+  --accent: #f4cbac;
+  --accent-foreground: #03030d;
+  --destructive: #c45c4a;
+  --border: #e4ddd0;
+  --input: #e4ddd0;
+  --ring: #8c52ff;
+  --chart-1: #8c52ff;
+  --chart-2: #5ce1e6;
+  --chart-3: #f8a28c;
+  --chart-4: #aee4d6;
+  --chart-5: #f4cbac;
   --radius: 0.5rem;
-  --app-sidebar: #f9fafb;
+  --app-header: #ffffff;
+  --app-sidebar: #fffaf4;
   --app-main: #ffffff;
-  --brand: #5b4bf0;
-  --brand-muted: #ede9fe;
+  --brand: #3533cd;
+  --brand-muted: #eee8ff;
   --brand-foreground: #ffffff;
-  --sidebar: #f9fafb;
-  --sidebar-foreground: #374151;
-  --sidebar-primary: #5b4bf0;
+  --sidebar: #fffaf4;
+  --sidebar-foreground: #03030d;
+  --sidebar-primary: #8c52ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ede9fe;
-  --sidebar-accent-foreground: #5b4bf0;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: #5b4bf0;
+  --sidebar-accent: #eee8ff;
+  --sidebar-accent-foreground: #3533cd;
+  --sidebar-border: #eadfd0;
+  --sidebar-ring: #8c52ff;
+  --brand-gradient: linear-gradient(90deg, #8c52ff, #5ce1e6);
+  --soft-gradient: linear-gradient(90deg, #f89185, #ade5d3);
+  --icon-gradient: linear-gradient(135deg, #f4cbac, #f8a28c);
+  --header-line: linear-gradient(90deg, #f89185, #ae8def, #5ce1e6);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #000000;
+  --foreground: #ded6c6;
+  --card: #121018;
+  --card-foreground: #ded6c6;
+  --popover: #14121a;
+  --popover-foreground: #ded6c6;
+  --primary: #ae8def;
+  --primary-foreground: #03030d;
+  --secondary: #1a1622;
+  --secondary-foreground: #ded6c6;
+  --muted: #16131c;
+  --muted-foreground: #a8a195;
+  --accent: #2a1838;
+  --accent-foreground: #ae8def;
+  --destructive: #f89185;
+  --border: #2c2830;
+  --input: #2c2830;
+  --ring: #ae8def;
+  --chart-1: #ae8def;
+  --chart-2: #76daed;
+  --chart-3: #f8a28c;
+  --chart-4: #aee4d6;
+  --chart-5: #f4cbac;
+  --app-header: #000000;
+  --app-sidebar: #0c0a12;
+  --app-main: #000000;
+  --brand: #ae8def;
+  --brand-muted: #241833;
+  --brand-foreground: #ffffff;
+  --sidebar: #0c0a12;
+  --sidebar-foreground: #ded6c6;
+  --sidebar-primary: #ae8def;
+  --sidebar-primary-foreground: #03030d;
+  --sidebar-accent: #241833;
+  --sidebar-accent-foreground: #ded6c6;
+  --sidebar-border: #2c2830;
+  --sidebar-ring: #5ce1e6;
+  --sand: #ded6c6;
+  --ink: #03030d;
+  --navy: #5ce1e6;
 }
 
 @layer base {
@@ -105,3 +175,56 @@
   }
 }
 
+@layer components {
+  .beach-map.maplibregl-map,
+  .beach-map .maplibregl-canvas-container,
+  .beach-map .maplibregl-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .nav-tree-tile {
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .nav-tree-tile[data-active="true"] {
+    background-image: var(--soft-gradient);
+    color: var(--ink);
+  }
+
+  .nav-tree-tile:not([data-active="true"]):hover {
+    background-image:
+      linear-gradient(var(--app-sidebar), var(--app-sidebar)),
+      var(--soft-gradient);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    color: var(--foreground);
+  }
+
+  .photo-thumb {
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .photo-thumb[data-active="true"],
+  .photo-thumb:hover {
+    background-image:
+      linear-gradient(var(--card), var(--card)),
+      var(--soft-gradient);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+}
+
+@utility bg-brand-gradient {
+  background-image: var(--brand-gradient);
+}
+
+@utility bg-soft-gradient {
+  background-image: var(--soft-gradient);
+}
+
+@utility bg-icon-gradient {
+  background-image: var(--icon-gradient);
+}

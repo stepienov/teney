@@ -4,14 +4,11 @@ import type { BeachFilterState } from "@/components/beaches/beach-filter-state";
 import { miradorPath } from "@/lib/mirador-slug";
 import type { PoiCategoryExplorerConfig } from "@/lib/poi-categories/types";
 import { POI_CATEGORY } from "@/lib/query/keys";
-import {
-  miradorFiltersQueryOptions,
-  miradorMapSearchQueryOptions,
-  miradorSearchInfiniteQueryOptions,
-  miradorSearchQueryOptions,
-} from "@/lib/query/miradores";
+import { createGenericPoiQueryFns } from "@/lib/query/generic-pois";
 
 const DEFAULT_MIRADOR_SORT = "name";
+
+const queries = createGenericPoiQueryFns(POI_CATEGORY.miradores, "VIEWPOINT");
 
 function toMiradorSearchBaseParams(
   filters: BeachFilterState,
@@ -34,6 +31,7 @@ export const miradoresExplorerConfig: PoiCategoryExplorerConfig = {
   category: POI_CATEGORY.miradores,
   basePath: "/miradores",
   messagesNamespace: "miradores",
+  listTitleKey: "miradores",
   viewStorageKey: "teney-mirador-view",
   defaultSort: DEFAULT_MIRADOR_SORT,
   features: {
@@ -42,9 +40,9 @@ export const miradoresExplorerConfig: PoiCategoryExplorerConfig = {
   },
   poiPath: miradorPath,
   placeholderIcon: Mountain,
-  filtersQueryOptions: miradorFiltersQueryOptions,
-  searchQueryOptions: miradorSearchQueryOptions,
-  searchInfiniteQueryOptions: miradorSearchInfiniteQueryOptions,
-  mapSearchQueryOptions: miradorMapSearchQueryOptions,
+  filtersQueryOptions: queries.filtersQueryOptions,
+  searchQueryOptions: queries.searchQueryOptions,
+  searchInfiniteQueryOptions: queries.searchInfiniteQueryOptions,
+  mapSearchQueryOptions: queries.mapSearchQueryOptions,
   toSearchBaseParams: toMiradorSearchBaseParams,
 };

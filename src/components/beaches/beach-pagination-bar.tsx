@@ -105,7 +105,7 @@ export function BeachPaginationBar({
           onChange={(event) =>
             onPageSizeChange(Number(event.target.value) as BeachPageSize)
           }
-          className="h-9 min-w-[7rem] cursor-pointer appearance-none rounded-lg border border-brand/25 bg-white py-0 pr-9 pl-3 text-sm text-foreground outline-none transition-colors hover:border-brand/40 focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 min-w-[7rem] cursor-pointer appearance-none rounded-lg border border-brand/25 bg-card py-0 pr-9 pl-3 text-sm text-foreground outline-none transition-colors hover:border-brand/40 focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={t("perPage")}
         >
           {BEACH_PAGE_SIZE_OPTIONS.map((option) => (

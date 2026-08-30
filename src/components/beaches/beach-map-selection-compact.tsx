@@ -25,7 +25,7 @@ export function BeachMapSelectionCompact({
   return (
     <article
       className={cn(
-        "overflow-hidden rounded-md border border-border bg-white shadow-md",
+        "overflow-hidden rounded-md border border-border bg-card shadow-md",
         className,
       )}
     >

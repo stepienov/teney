@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPin } from "lucide-react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -15,6 +16,7 @@ import {
 import { Link } from "@/i18n/routing";
 import { fetchListTeaser } from "@/lib/api/list-teaser";
 import { ApiError } from "@/lib/api-client";
+import { resolveOwnerMediaUrl } from "@/lib/poi-media";
 
 type ListTeaserViewProps = {
   token: string;
@@ -74,12 +76,14 @@ export function ListTeaserView({ token }: ListTeaserViewProps) {
       </header>
 
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {teaser.previewPois.map((poi) => (
+        {teaser.previewPois.map((poi) => {
+          const photoSrc = resolveOwnerMediaUrl(poi.photoUrl);
+          return (
           <li key={poi.id} className={`overflow-hidden ${pageCardClass} p-0`}>
             <div className="relative aspect-[4/3] bg-muted">
-              {poi.photoUrl ? (
+              {photoSrc ? (
                 <Image
-                  src={poi.photoUrl}
+                  src={photoSrc}
                   alt=""
                   fill
                   className="object-cover"
@@ -87,14 +91,16 @@ export function ListTeaserView({ token }: ListTeaserViewProps) {
                   unoptimized
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                  {t("noPhoto")}
+                <div className="flex h-full flex-col items-center justify-center gap-1 text-muted-foreground">
+                  <MapPin className="size-8 stroke-[1.25]" aria-hidden />
+                  <span className="text-sm">{t("noPhoto")}</span>
                 </div>
               )}
             </div>
             <p className="px-3 py-2 text-sm font-medium text-foreground">{poi.name}</p>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       {teaser.totalCount > teaser.previewPois.length && (
